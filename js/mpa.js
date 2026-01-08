@@ -10,6 +10,7 @@ const SERVICE_AREAS = [
   "인천",
 ];
 
+// ✅ 카카오 지오코딩이 돌려준 address_name(=label)에 허용 키워드가 포함되는지 확인
 function isServiceAreaByAddressName(addressName) {
   const s = String(addressName || "");
   return SERVICE_AREAS.some((area) => s.includes(area));
@@ -20,11 +21,15 @@ function isServiceAreaByAddressName(addressName) {
   const input = document.getElementById("q");
   const submitBtn = form?.querySelector('button[type="submit"]');
 
+  // ✅ [다음으로] 버튼
   const nextBtn = document.getElementById("nextBtn");
+  // ✅ [이전으로] 버튼
   const prevBtn = document.getElementById("prevBtn");
 
+  // 폼이 없는 페이지면 종료 (안전)
   if (!form || !input) return;
 
+  // ✅ 타입 읽기 (index.html에서 maps.html?type=xxx 로 넘어옴)
   function getType() {
     return (
       new URLSearchParams(window.location.search).get("type") ||
@@ -33,8 +38,10 @@ function isServiceAreaByAddressName(addressName) {
     );
   }
 
+  // ✅ 타입별 "다음 단계" 페이지 매핑 (★여기 파일명만 네 프로젝트에 맞게 수정★)
   const NEXT_PAGE_BY_TYPE = {
     boiler:  "installation_boiler.html",
+    // 가스온수가
     gas:     "installation_gas.html",
     dryer:   "installation_dryer.html",
     elec:    "installation_elec.html",
@@ -42,28 +49,35 @@ function isServiceAreaByAddressName(addressName) {
     sash:    "installation_sash.html",
   };
 
-  const DEFAULT_NEXT_PAGE = "installation_gas2.html";
+  // ✅ 기본 fallback (타입이 없거나 매핑이 없을 때)
+  const DEFAULT_NEXT_PAGE = "installation2.html";
+
   function getNextPageByType(type) {
     return NEXT_PAGE_BY_TYPE[type] || DEFAULT_NEXT_PAGE;
   }
 
-  // ✅ 비허용지역일 때 이동할 HTML
-  const OUTSIDE_SERVICE_PAGE = "connection.html";
-
+  // ✅ (선택) 다음으로 눌렀을 때 히스토리에 남기고 싶으면 true
   const SAVE_NEXT_TO_HISTORY = true;
 
+  // ✅ 회사 주소 고정
   const COMPANY = {
     name: "선두에너지",
     address: "인천 서구 청마로34번길 32-9",
   };
 
-  let companyCoords = null;
+  let companyCoords = null; // { x, y, name }
 
   const normalize = (s) =>
-    String(s || "").trim().replace(/\s+/g, " ");
+    String(s || "")
+      .trim()
+      .replace(/\s+/g, " ");
 
   const safeName = (s) =>
-    encodeURIComponent(String(s || "").replace(/,/g, " ").trim());
+    encodeURIComponent(
+      String(s || "")
+        .replace(/,/g, " ")
+        .trim()
+    );
 
   function setBusy(busy) {
     input.disabled = busy;
@@ -95,16 +109,24 @@ function isServiceAreaByAddressName(addressName) {
       throw new Error("GEOCODE_NON_JSON_RESPONSE");
     }
 
+    // ✅ 카카오 API 에러 처리
     if (!res.ok) {
       const msg = data?.message || data?.error || "API error";
       throw new Error(`KAKAOMAP_ERROR: ${msg}`);
     }
 
+    // ✅ x/y를 '숫자'로 안전하게 검증
     const x = Number(data?.x);
     const y = Number(data?.y);
     if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
 
-    return { x, y, label: data.address_name || q, raw: q };
+    // ✅ label(=address_name) 말고도, 입력값(q)도 같이 들고 있어 판별에 활용 가능
+    return {
+      x,
+      y,
+      label: data.address_name || q,
+      raw: q,
+    };
   }
 
   function buildDirectionsUrl(from, to) {
@@ -118,40 +140,55 @@ function isServiceAreaByAddressName(addressName) {
       const c = await geocode(COMPANY.address);
       if (!c) throw new Error("COMPANY_GEOCODE_NOT_FOUND");
       companyCoords = { x: c.x, y: c.y, name: COMPANY.name };
+      console.log("[initCompany] OK:", companyCoords);
     } catch (e) {
+      console.warn("[initCompany] failed:", e);
       if (!silent) {
+        const msg = String(e?.message || e);
         alert(
           "회사 주소 좌표 초기화에 실패했어요.\n" +
-          `회사주소: ${COMPANY.address}\n` +
-          `오류: ${String(e?.message || e)}`
+            `회사주소: ${COMPANY.address}\n` +
+            `오류: ${msg}\n\n` +
+            "(/api/geocode 응답과 KAKAO_REST_KEY 설정을 확인하세요.)"
         );
       }
     }
   }
 
+  // ✅ 히스토리에 남기는 헬퍼 (app.js에서 쓰는 localStorage 키와 동일)
   function pushHistory(label, url) {
     const STORAGE_KEY = "sundoo_selection_history";
     try {
       const arr = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
       arr.push({ label, url, ts: Date.now() });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(arr.slice(-30)));
-    } catch {}
+    } catch {
+      // localStorage 문제 있어도 동작은 계속
+    }
   }
 
+  // ✅ [이전으로] 클릭
   if (prevBtn) {
     prevBtn.addEventListener("click", () => {
-      if (window.history.length > 1) window.history.back();
-      else window.location.href = "index2.html";
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.location.href = "index.html";
+      }
     });
   }
 
+  // ✅ [다음으로] 클릭 시 - 지도검색 안 하고 다음단계로 이동 (type별 분기)
   if (nextBtn) {
     nextBtn.addEventListener("click", () => {
       const q = normalize(input.value);
+
       const type = getType();
       if (type) localStorage.setItem("consult_type", type);
+
       const nextPage = getNextPageByType(type);
 
+      // 원하면 입력값을 다음 페이지로 전달
       const url = q
         ? `${nextPage}?q=${encodeURIComponent(q)}&skipMap=1&type=${encodeURIComponent(type)}`
         : `${nextPage}?skipMap=1&type=${encodeURIComponent(type)}`;
@@ -173,6 +210,7 @@ function isServiceAreaByAddressName(addressName) {
 
     const nextPage = getNextPageByType(type);
 
+    // 회사 좌표 없으면(초기화 실패/미완료) 검색 시점에 다시 시도 + 이때만 안내
     if (!companyCoords) {
       await initCompany({ silent: false });
       if (!companyCoords) return;
@@ -181,32 +219,31 @@ function isServiceAreaByAddressName(addressName) {
     setBusy(true);
     try {
       const customer = await geocode(q);
-      const areaText = (customer?.label || "") + " " + (customer?.raw || "");
 
-      // ✅ 비허용: connection.html로 이동
+      // ✅ 핵심:
+      // - 지오코딩 실패(null)면 nextPage로
+      // - 지오코딩 성공해도 (label에 허용지역 키워드가 없으면) nextPage로
+      const areaText = (customer?.label || "") + " " + (customer?.raw || "");
       if (!customer || !isServiceAreaByAddressName(areaText)) {
-        const outUrl =
-          `${OUTSIDE_SERVICE_PAGE}?q=${encodeURIComponent(q)}&type=${encodeURIComponent(type)}&inService=0`;
-        pushHistory(`지역(서비스외): ${q}`, outUrl);
-        location.href = outUrl;
+        const url = `${nextPage}?q=${encodeURIComponent(q)}&type=${encodeURIComponent(type)}`;
+        pushHistory(`지역(서비스외): ${q}`, url);
+        location.href = url;
         return;
       }
 
-      // ✅ 허용: (팝업 X) 현재 탭에서 네이버맵으로 바로 이동
-      const naverUrl = buildDirectionsUrl(
+      // ✅ 허용 지역이면 네이버 길찾기 열기 (회사 -> 고객)
+      const url = buildDirectionsUrl(
         { x: companyCoords.x, y: companyCoords.y, name: companyCoords.name },
         { x: customer.x, y: customer.y, name: customer.label }
       );
 
-      pushHistory(`지역(서비스내): ${q}`, naverUrl);
+      // (선택) 히스토리 남김
+      pushHistory(`지역(서비스내): ${q}`, url);
 
-      // 네이버맵으로 이동(무조건 됨)
-      location.href = naverUrl;
-
-      // ⚠️ 네이버맵으로 이동하면 여기 아래는 실행 의미 없음(바로 페이지가 바뀜)
-      // "네이버맵도 열고 nextPage도 가기"는 팝업이 막히는 환경에선 불가능함.
+      window.open(url, "_blank", "noopener,noreferrer");
     } catch (e) {
-      alert("처리 중 오류가 발생했어요.\n" + String(e?.message || e));
+      const msg = String(e?.message || e);
+      alert("처리 중 오류가 발생했어요.\n" + msg);
     } finally {
       setBusy(false);
     }
@@ -217,5 +254,13 @@ function isServiceAreaByAddressName(addressName) {
     onSearch();
   });
 
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      onSearch();
+    }
+  });
+
+  // ✅ 페이지 로드시 회사 좌표 선계산 (로드 시엔 팝업 띄우지 않음)
   initCompany({ silent: true });
 })();
