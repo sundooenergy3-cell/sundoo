@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>전화상담도우미</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="css/installation_gas5.css" />
+
+  <!-- ✅ 공용 기록 렌더 -->
+  <script src="js/app.js" defer></script>
+</head>
+
+<body>
+  <main class="page">
+    <!-- ✅ 왼쪽 선택 기록 패널 -->
+    <aside class="history" aria-label="선택 기록">
+      <div class="history-head">
+        <h2 class="history-title">선택 기록</h2>
+        <button type="button" class="history-clear">지우기</button>
+      </div>
+      <ul class="history-list"></ul>
+      <p class="history-hint">이번 상담 선택 기록입니다.</p>
+    </aside>
+
+    <!-- 본문 -->
+    <div class="container">
+      <header class="logo-area">
+        <a href="index.html">
+          <img src="img/logo.png" alt="SUNDOO" class="logo" />
+        </a>
+      </header>
+
+      <main class="content">
+        <h1 class="price" id="price">+0원</h1>
+        <div class="subtitle-wrap">
+          <p class="subtitle">기존 금액에 위 금액을 추가하여 안내해주세요.</p>
+          <button
+            type="button"
+            class="btn-prev"
+            onclick="history.back()"
+            aria-label="이전으로"
+            id="prevBtn"
+          >
+            이전으로
+          </button>
+        </div>
+
+        <!-- ✅ 요약/사진 슬라이더 -->
+        <section class="summary-slider" aria-label="최종 요약/사진 전환">
+          <div class="summary-track" id="summaryTrack">
+
+            <!-- 1페이지: 최종 요약 -->
+            <div class="summary-page">
+              <section class="summary" aria-label="최종 요약">
+                <h2 class="summary-title">최종 요약</h2>
+                <p class="summary-title2">- 가스온수기</p>
+                <ul class="summary-list" id="summaryList"></ul>
+
+                <div class="summary-actions">
+                  <button class="summary-btn primary" type="button" id="copySummaryBtn">요약 복사</button>
+                  <button class="summary-btn" type="button" id="resetAllBtn">전체 초기화</button>
+                </div>
+
+                <!-- ✅ 오른쪽 아래 화살표 -->
+                <button type="button" class="summary-next" id="summaryNextBtn" aria-label="다음(사진 보기)">
+                  ➜
+                </button>
+              </section>
+            </div>
+
+            <!-- 2페이지: 숨겨져 있다가 나올 사진 -->
+            <div class="summary-page">
+              <section class="summary summary-photo" aria-label="사진">
+                <h2 class="summary-title">설치 용량</h2>
+
+                <!-- 원하는 이미지로 변경 -->
+                <div class="summary-image-wrap">
+                  <img src="img/background_1_1.png" alt="설치 사진" class="summary-image" />
+                </div>
+
+                <!-- ✅ 뒤로 가기 -->
+                <button type="button" class="summary-prev" id="summaryPrevBtn" aria-label="이전(요약 보기)">
+                  ← 요약으로
+                </button>
+              </section>
+            </div>
+
+          </div>
+        </section>
+
+        <hr class="divider" />
+
+        <section class="guide">
+          <h2 class="guide-title">가스온수기 신규 안내</h2>
+
+          <ul class="guide-list">
+            <li>시공 비용 <strong>220,000원</strong> 안내</li>
+            <li>도시가스 용량 변경 시 소비량 신고비용 5~60만원 발생 안내</li>
+            <li>도시가스 사용량 확인 후 시공</li>
+            <li>가스배관, 직/수/온수배관 유/무 확인</li>
+            <li>기기부터 나가는 곳 까지의 연도 길이 확인</li>
+            <li>설치 공간 사진 받고 마무리 후 계약서 작성</li>
+          </ul>
+        </section>
+      </main>
+    </div>
+  </main>
+
+  <script>
+    // ✅ 최종 금액 표시
+    const totalPrice = Number(localStorage.getItem("install_price") || 0);
+    document.getElementById("price").textContent = `+${totalPrice.toLocaleString()}원`;
+
+    // ✅ 저장값 읽기
+    const gasType = localStorage.getItem("gas_type");         // city / lpg
+    const installType = localStorage.getItem("install_type"); // new / replace
+    const holeYn = localStorage.getItem("hole_yn");           // yes / no
+
+    let conditions = [];
+    try { conditions = JSON.parse(localStorage.getItem("price_condition") || "[]"); } catch {}
+
+    // ✅ 선택 기록
+    const HISTORY_KEY = "sundoo_selection_history";
+    let history = [];
+    try {
+      history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+      if (!Array.isArray(history)) history = [];
+    } catch {}
+
+    // ✅ 사람이 읽기 좋은 텍스트
+    const tGas = gasType === "city" ? "도시가스" : gasType === "lpg" ? "LPG" : "미선택";
+    const tInstall = installType === "new" ? "신규" : installType === "replace" ? "교체" : "미선택";
+    const tHole = holeYn === "yes" ? "있음" : holeYn === "no" ? "없음(+55,000)" : "미선택";
+
+    const condText = (() => {
+      const arr = [];
+      if (conditions.includes("near")) arr.push("근거리(-20,000)");
+      if (conditions.includes("chimney")) arr.push("연통(+30,000)");
+      return arr.length ? arr.join(", ") : "없음";
+    })();
+
+    // ✅ 요약 렌더
+    const summaryLines = [
+      `총 추가금: +${totalPrice.toLocaleString()}원`,
+      `가스 타입: ${tGas}`,
+      `설치 타입: ${tInstall}`,
+      `배관 구멍: ${tHole}`,
+      `금액 조건: ${condText}`,
+      `선택 기록: ${history.length}건`,
+    ];
+
+    document.getElementById("summaryList").innerHTML =
+      summaryLines.map(line => `<li class="summary-item">• ${line}</li>`).join("");
+
+    // ✅ 복사용 텍스트
+    const copyText =
+`[상담 요약]
+- 총 추가금: +${totalPrice.toLocaleString()}원
+- 가스 타입: ${tGas}
+- 설치 타입: ${tInstall}
+- 배관 구멍: ${tHole}
+- 금액 조건: ${condText}
+
+[선택 기록]
+${history.slice().reverse().map(h => `- ${h.label}`).join("\n")}`.trim();
+
+    // ✅ 요약 복사
+    document.getElementById("copySummaryBtn").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(copyText);
+        alert("요약이 복사되었습니다.");
+      } catch {
+        const ta = document.createElement("textarea");
+        ta.value = copyText;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        alert("요약이 복사되었습니다.");
+      }
+    });
+
+    // ✅ 전체 초기화
+    document.getElementById("resetAllBtn").addEventListener("click", () => {
+      localStorage.removeItem("gas_type");
+      localStorage.removeItem("install_type");
+      localStorage.removeItem("install_price");
+      localStorage.removeItem("hole_yn");
+      localStorage.removeItem("price_condition");
+      localStorage.removeItem(HISTORY_KEY);
+
+      alert("전체 기록/선택이 초기화되었습니다.");
+      location.href = "index.html";
+    });
+
+    // ✅ 슬라이드 전환 (요약 -> 사진)
+    const track = document.getElementById("summaryTrack");
+    const nextBtn = document.getElementById("summaryNextBtn");
+    const summaryPrevBtn = document.getElementById("summaryPrevBtn");
+
+    let page = 0; // 0=요약, 1=사진
+
+    function renderSlide() {
+      track.style.transform = `translateX(-${page * 50}%)`;
+    }
+
+    nextBtn?.addEventListener("click", () => {
+      page = 1;
+      renderSlide();
+    });
+
+    summaryPrevBtn?.addEventListener("click", () => {
+      page = 0;
+      renderSlide();
+    });
+
+    // ✅✅✅ 이전으로 버튼: 항상 원하는 페이지로 이동 (이 부분만 핵심 수정)
+    const prevBtnTop = document.getElementById("prevBtn");
+    prevBtnTop?.addEventListener("click", (e) => {
+      // 기존 onclick="history.back()" 무력화
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      location.href = "installation_gas4.html";
+    }, true);
+  </script>
+</body>
+</html>

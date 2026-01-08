@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>전화상담도우미</title>
+
+  <!-- Pretendard -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"
+  />
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/mobile.css" />
+</head>
+
+<body>
+  <main class="page">
+    <!--  왼쪽 기록 패널 -->
+    <aside class="history" aria-label="선택 기록">
+      <div class="history-head">
+        <h2 class="history-title">선택 기록</h2>
+        <button type="button" class="history-clear">지우기</button>
+      </div>
+
+      <ul class="history-list"></ul>
+      <p class="history-hint">버튼을 누르면 여기에 기록이 남아요.</p>
+    </aside>
+
+    <!-- 기존 화면 -->
+    <section class="wrap" aria-label="메인 화면">
+      <div class="logo">
+        <a href="index.html">
+          <img src="img/logo.png" alt="SUNDOO 로고" />
+        </a>
+      </div>
+
+      <h1 class="title">전화 상담 도우미</h1>
+      <p class="subtitle">상담 타입을 선택해주세요.</p>
+
+      <div class="grid" role="list">
+        <button
+          class="card"
+          type="button"
+          role="listitem"
+          data-label="보일러"
+          data-url="maps.html?type=boiler"
+        >
+          보일러
+        </button>
+
+        <button
+          class="card"
+          type="button"
+          role="listitem"
+          data-label="가스온수기"
+          data-url="maps.html?type=gas"
+        >
+          가스온수기
+        </button>
+
+        <button
+          class="card"
+          type="button"
+          role="listitem"
+          data-label="건조기"
+          data-url="maps.html?type=dryer"
+        >
+          건조기
+        </button>
+
+        <button
+          class="card"
+          type="button"
+          role="listitem"
+          data-label="전기온수기"
+          data-url="maps.html?type=elec"
+        >
+          전기온수기
+        </button>
+
+        <button
+          class="card"
+          type="button"
+          role="listitem"
+          data-label="빌트인"
+          data-url="maps.html?type=builtin"
+        >
+          빌트인
+        </button>
+
+        <button
+          class="card"
+          type="button"
+          role="listitem"
+          data-label="보조샤시"
+          data-url="maps.html?type=sash"
+        >
+          보조샤시
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <!-- JS -->
+  <script src="js/app.js"></script>
+</body>
+</html>
