@@ -179,29 +179,22 @@ ${history.slice().reverse().map(h => `- ${h.label}`).join("\n")}`.trim();
       }
     });
 
-    // ✅✅✅ 전체 초기화: app.js가 가로채지 못하게 "캡처 단계"에서 먼저 잡아서 차단
+    // ✅✅✅ 전체 초기화 (중요):
+    // 여기 페이지에서 localStorage를 지우지 말고,
+    // index2.html?reset=1 로 먼저 이동해서 index2에서 지우게 해야 app.js 가드에 안 걸림
     document.getElementById("resetAllBtn").addEventListener("click", (e) => {
-      // 다른 스크립트(app.js 포함)가 같은 클릭을 처리 못하게 막음
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
 
-      // (선택) app.js가 상태 보고 리다이렉트하는 경우를 대비해 플래그 남김
-      sessionStorage.setItem("reset_redirect_to_index2", "1");
+      // index2에서 reset 처리하도록 플래그/쿼리만 전달
+      sessionStorage.setItem("RESET_ALL_REQUESTED", "1");
 
-      // 초기화
-      localStorage.removeItem("gas_type");
-      localStorage.removeItem("install_type");
-      localStorage.removeItem("install_price");
-      localStorage.removeItem("hole_yn");
-      localStorage.removeItem("price_condition");
-      localStorage.removeItem(HISTORY_KEY);
+      alert("전체 기록/선택을 초기화합니다. 홈으로 이동합니다.");
 
-      alert("전체 기록/선택이 초기화되었습니다.");
-
-      // ✅ index2.html로 '강제' 이동 (상대경로 확실히)
-      location.replace("./index2.html?reset=1");
-    }, true); // ✅ 캡처 단계(true)가 핵심!
+      // 절대경로로 이동 (상대경로 문제 방지)
+      location.replace("/index2.html?reset=1");
+    }, true);
 
     // ✅ 슬라이드 전환 (요약 -> 사진)
     const track = document.getElementById("summaryTrack");
