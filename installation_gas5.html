@@ -74,12 +74,10 @@
               <section class="summary summary-photo" aria-label="사진">
                 <h2 class="summary-title">설치 용량</h2>
 
-                <!-- 원하는 이미지로 변경 -->
                 <div class="summary-image-wrap">
                   <img src="img/background_1_1.png" alt="설치 사진" class="summary-image" />
                 </div>
 
-                <!-- ✅ 뒤로 가기 -->
                 <button type="button" class="summary-prev" id="summaryPrevBtn" aria-label="이전(요약 보기)">
                   ← 요약으로
                 </button>
@@ -181,8 +179,17 @@ ${history.slice().reverse().map(h => `- ${h.label}`).join("\n")}`.trim();
       }
     });
 
-    // ✅ 전체 초기화
-    document.getElementById("resetAllBtn").addEventListener("click", () => {
+    // ✅✅✅ 전체 초기화: app.js가 가로채지 못하게 "캡처 단계"에서 먼저 잡아서 차단
+    document.getElementById("resetAllBtn").addEventListener("click", (e) => {
+      // 다른 스크립트(app.js 포함)가 같은 클릭을 처리 못하게 막음
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      // (선택) app.js가 상태 보고 리다이렉트하는 경우를 대비해 플래그 남김
+      sessionStorage.setItem("reset_redirect_to_index2", "1");
+
+      // 초기화
       localStorage.removeItem("gas_type");
       localStorage.removeItem("install_type");
       localStorage.removeItem("install_price");
@@ -191,8 +198,10 @@ ${history.slice().reverse().map(h => `- ${h.label}`).join("\n")}`.trim();
       localStorage.removeItem(HISTORY_KEY);
 
       alert("전체 기록/선택이 초기화되었습니다.");
-      location.href = "index2.html";
-    });
+
+      // ✅ index2.html로 '강제' 이동 (상대경로 확실히)
+      location.replace("./index2.html?reset=1");
+    }, true); // ✅ 캡처 단계(true)가 핵심!
 
     // ✅ 슬라이드 전환 (요약 -> 사진)
     const track = document.getElementById("summaryTrack");
@@ -215,10 +224,9 @@ ${history.slice().reverse().map(h => `- ${h.label}`).join("\n")}`.trim();
       renderSlide();
     });
 
-    // ✅✅✅ 이전으로 버튼: 항상 원하는 페이지로 이동 (이 부분만 핵심 수정)
+    // ✅✅✅ 이전으로 버튼: 항상 원하는 페이지로 이동
     const prevBtnTop = document.getElementById("prevBtn");
     prevBtnTop?.addEventListener("click", (e) => {
-      // 기존 onclick="history.back()" 무력화
       e.preventDefault();
       e.stopImmediatePropagation();
       location.href = "installation_gas4.html";
@@ -226,5 +234,3 @@ ${history.slice().reverse().map(h => `- ${h.label}`).join("\n")}`.trim();
   </script>
 </body>
 </html>
-
-
