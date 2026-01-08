@@ -38,10 +38,9 @@ function isServiceAreaByAddressName(addressName) {
     );
   }
 
-  // ✅ 타입별 "다음 단계" 페이지 매핑 (★여기 파일명만 네 프로젝트에 맞게 수정★)
+  // ✅ 타입별 "다음 단계" 페이지 매핑
   const NEXT_PAGE_BY_TYPE = {
     boiler:  "installation_boiler.html",
-    // 가스온수가
     gas:     "installation_gas.html",
     dryer:   "installation_dryer.html",
     elec:    "installation_elec.html",
@@ -50,11 +49,14 @@ function isServiceAreaByAddressName(addressName) {
   };
 
   // ✅ 기본 fallback (타입이 없거나 매핑이 없을 때)
-  const DEFAULT_NEXT_PAGE = "installation2.html";
+  const DEFAULT_NEXT_PAGE = "installation_gas2.html";
 
   function getNextPageByType(type) {
     return NEXT_PAGE_BY_TYPE[type] || DEFAULT_NEXT_PAGE;
   }
+
+  // ✅ 비허용지역(서비스 외)일 때 이동할 HTML (여기만 바꾸면 됨!)
+  const OUTSIDE_SERVICE_PAGE = "connection.html";
 
   // ✅ (선택) 다음으로 눌렀을 때 히스토리에 남기고 싶으면 true
   const SAVE_NEXT_TO_HISTORY = true;
@@ -155,7 +157,7 @@ function isServiceAreaByAddressName(addressName) {
     }
   }
 
-  // ✅ 히스토리에 남기는 헬퍼 (app.js에서 쓰는 localStorage 키와 동일)
+  // ✅ 히스토리에 남기는 헬퍼
   function pushHistory(label, url) {
     const STORAGE_KEY = "sundoo_selection_history";
     try {
@@ -173,7 +175,7 @@ function isServiceAreaByAddressName(addressName) {
       if (window.history.length > 1) {
         window.history.back();
       } else {
-        window.location.href = "index.html";
+        window.location.href = "index2.html";
       }
     });
   }
@@ -188,7 +190,6 @@ function isServiceAreaByAddressName(addressName) {
 
       const nextPage = getNextPageByType(type);
 
-      // 원하면 입력값을 다음 페이지로 전달
       const url = q
         ? `${nextPage}?q=${encodeURIComponent(q)}&skipMap=1&type=${encodeURIComponent(type)}`
         : `${nextPage}?skipMap=1&type=${encodeURIComponent(type)}`;
@@ -201,6 +202,9 @@ function isServiceAreaByAddressName(addressName) {
     });
   }
 
+  // ✅ 검색(엔터/버튼) 시:
+  // - 허용지역: 네이버맵 새창 + 현재 페이지는 nextPage로 이동
+  // - 비허용지역: 네이버맵 X + 현재 페이지는 OUTSIDE_SERVICE_PAGE로 이동
   async function onSearch() {
     const q = normalize(input.value);
     if (!q) return alert("고객 주소(지역/주소)를 입력해주세요.");
@@ -210,38 +214,58 @@ function isServiceAreaByAddressName(addressName) {
 
     const nextPage = getNextPageByType(type);
 
-    // 회사 좌표 없으면(초기화 실패/미완료) 검색 시점에 다시 시도 + 이때만 안내
+    // ✅ (팝업 차단 최소화) 사용자 액션 시점에 미리 창을 열어둠
+    // - 비허용지역이면 닫을 예정
+    const popup = window.open("about:blank", "_blank", "noopener,noreferrer");
+
+    // 회사 좌표 없으면 검색 시점에 다시 시도 + 이때만 안내
     if (!companyCoords) {
       await initCompany({ silent: false });
-      if (!companyCoords) return;
+      if (!companyCoords) {
+        if (popup) popup.close();
+        return;
+      }
     }
 
     setBusy(true);
     try {
       const customer = await geocode(q);
 
-      // ✅ 핵심:
-      // - 지오코딩 실패(null)면 nextPage로
-      // - 지오코딩 성공해도 (label에 허용지역 키워드가 없으면) nextPage로
       const areaText = (customer?.label || "") + " " + (customer?.raw || "");
+
+      // ✅ 비허용지역(또는 지오코딩 실패): 네이버맵 안띄움 + OUTSIDE_SERVICE_PAGE로 이동
       if (!customer || !isServiceAreaByAddressName(areaText)) {
-        const url = `${nextPage}?q=${encodeURIComponent(q)}&type=${encodeURIComponent(type)}`;
-        pushHistory(`지역(서비스외): ${q}`, url);
-        location.href = url;
+        if (popup) popup.close();
+
+        const outUrl =
+          `${OUTSIDE_SERVICE_PAGE}?q=${encodeURIComponent(q)}&type=${encodeURIComponent(type)}&inService=0`;
+
+        pushHistory(`지역(서비스외): ${q}`, outUrl);
+        location.href = outUrl;
         return;
       }
 
-      // ✅ 허용 지역이면 네이버 길찾기 열기 (회사 -> 고객)
-      const url = buildDirectionsUrl(
+      // ✅ 허용지역: 네이버 길찾기 열기 + nextPage로 이동
+      const naverUrl = buildDirectionsUrl(
         { x: companyCoords.x, y: companyCoords.y, name: companyCoords.name },
         { x: customer.x, y: customer.y, name: customer.label }
       );
 
-      // (선택) 히스토리 남김
-      pushHistory(`지역(서비스내): ${q}`, url);
+      if (popup) popup.location.href = naverUrl;
+      else window.open(naverUrl, "_blank", "noopener,noreferrer");
 
-      window.open(url, "_blank", "noopener,noreferrer");
+      pushHistory(`지역(서비스내): ${q}`, naverUrl);
+
+      const nextUrl =
+        `${nextPage}?q=${encodeURIComponent(q)}&type=${encodeURIComponent(type)}&inService=1`;
+
+      pushHistory(`다음단계 이동: ${q}`, nextUrl);
+
+      location.href = nextUrl;
+      return;
+
     } catch (e) {
+      if (popup) popup.close();
       const msg = String(e?.message || e);
       alert("처리 중 오류가 발생했어요.\n" + msg);
     } finally {
