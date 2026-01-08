@@ -50,7 +50,7 @@ function isServiceAreaByAddressName(addressName) {
   };
 
   // ✅ 기본 fallback (타입이 없거나 매핑이 없을 때)
-  const DEFAULT_NEXT_PAGE = "installation2.html";
+  const DEFAULT_NEXT_PAGE = "installation_gas.html";
 
   function getNextPageByType(type) {
     return NEXT_PAGE_BY_TYPE[type] || DEFAULT_NEXT_PAGE;
@@ -232,15 +232,25 @@ function isServiceAreaByAddressName(addressName) {
       }
 
       // ✅ 허용 지역이면 네이버 길찾기 열기 (회사 -> 고객)
-      const url = buildDirectionsUrl(
+      const naverUrl = buildDirectionsUrl(
         { x: companyCoords.x, y: companyCoords.y, name: companyCoords.name },
         { x: customer.x, y: customer.y, name: customer.label }
       );
 
       // (선택) 히스토리 남김
-      pushHistory(`지역(서비스내): ${q}`, url);
+      pushHistory(`지역(서비스내): ${q}`, naverUrl);
 
-      window.open(url, "_blank", "noopener,noreferrer");
+      // ✅ 1) 네이버맵 새창
+      window.open(naverUrl, "_blank", "noopener,noreferrer");
+
+      // ✅ 2) 현재 페이지도 다음 HTML로 이동 (추가된 부분)
+      const nextUrl =
+        `${nextPage}?q=${encodeURIComponent(q)}&type=${encodeURIComponent(type)}&inService=1`;
+      if (SAVE_NEXT_TO_HISTORY) pushHistory(`다음단계 이동: ${q}`, nextUrl);
+
+      location.href = nextUrl;
+      return;
+
     } catch (e) {
       const msg = String(e?.message || e);
       alert("처리 중 오류가 발생했어요.\n" + msg);
