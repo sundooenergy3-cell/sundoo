@@ -264,13 +264,7 @@ function isServiceAreaByAddressName(addressName) {
     onSearch();
   });
 
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      onSearch();
-    }
-  });
-
   // ✅ 페이지 로드시 회사 좌표 선계산 (로드 시엔 팝업 띄우지 않음)
   initCompany({ silent: true });
 })();
+
