@@ -157,7 +157,6 @@ function isServiceAreaByAddressName(addressName) {
     }
   }
 
-  // ✅ [이전으로]
   if (prevBtn) {
     prevBtn.addEventListener("click", () => {
       if (window.history.length > 1) window.history.back();
@@ -165,7 +164,6 @@ function isServiceAreaByAddressName(addressName) {
     });
   }
 
-  // ✅ [다음으로] (지도 스킵)
   if (nextBtn) {
     nextBtn.addEventListener("click", () => {
       const q = normalize(input.value);
@@ -187,24 +185,17 @@ function isServiceAreaByAddressName(addressName) {
     });
   }
 
-  // ✅ 팝업 핸들(클릭 순간에 열어두기)
-  // - 입력값에 허용 키워드가 있으면 미리 열기(팝업차단 회피)
-  // - 나중에 최종 판정이 비허용이면 닫기
-  let pendingPopup = null;
-
-  function preOpenPopupIfLikelyInService(q) {
-    // 입력값이 "인천 ..." "서울 ..." 이런 경우에만 팝업 미리 확보
+  // ✅ 핵심: submit(클릭/엔터) 순간에만 팝업을 "필요할 가능성이 있을 때" 선오픈
+  function preOpenPopupIfLikely(q) {
+    // 입력값 자체에 허용 키워드가 있으면 선오픈 (팝업차단 회피)
     if (!isServiceAreaByAddressName(q)) return null;
-
-    const w = window.open("about:blank", "_blank", "noopener,noreferrer");
-    // 팝업이 막히면 null일 수 있음
-    return w;
+    return window.open("about:blank", "_blank", "noopener,noreferrer");
   }
 
-  async function onSearch(preOpenedPopup) {
+  async function onSearch(popup) {
     const q = normalize(input.value);
     if (!q) {
-      if (preOpenedPopup) preOpenedPopup.close();
+      if (popup) popup.close();
       return alert("고객 주소(지역/주소)를 입력해주세요.");
     }
 
@@ -216,7 +207,7 @@ function isServiceAreaByAddressName(addressName) {
     if (!companyCoords) {
       await initCompany({ silent: false });
       if (!companyCoords) {
-        if (preOpenedPopup) preOpenedPopup.close();
+        if (popup) popup.close();
         return;
       }
     }
@@ -226,9 +217,9 @@ function isServiceAreaByAddressName(addressName) {
       const customer = await geocode(q);
       const areaText = (customer?.label || "") + " " + (customer?.raw || "");
 
-      // ✅ 비허용지역: 팝업 있으면 닫고, connection.html로 이동
+      // ✅ 비허용: 팝업은 닫고, connection.html로 이동
       if (!customer || !isServiceAreaByAddressName(areaText)) {
-        if (preOpenedPopup) preOpenedPopup.close();
+        if (popup) popup.close();
 
         const outUrl =
           `${OUTSIDE_SERVICE_PAGE}?q=${encodeURIComponent(q)}&type=${encodeURIComponent(type)}&inService=0`;
@@ -238,26 +229,29 @@ function isServiceAreaByAddressName(addressName) {
         return;
       }
 
-      // ✅ 허용지역: 네이버맵 URL 생성
+      // ✅ 허용: 네이버 길찾기 + 현재페이지 다음단계 이동
       const naverUrl = buildDirectionsUrl(
         { x: companyCoords.x, y: companyCoords.y, name: companyCoords.name },
         { x: customer.x, y: customer.y, name: customer.label }
       );
 
-      // ✅ 허용지역: 팝업이 이미 열려있으면 그 창을 네이버맵으로 이동
-      if (preOpenedPopup) {
+      // 팝업이 선오픈 됐으면 그 창을 네이버맵으로
+      if (popup) {
         try {
-          preOpenedPopup.location.href = naverUrl;
+          popup.location.href = naverUrl;
         } catch {
-          // 이동 실패 시 fallback
-          window.location.href = naverUrl;
-          return;
+          // 일부 브라우저에서 막히면 fallback: 새탭 시도
+          const w = window.open(naverUrl, "_blank", "noopener,noreferrer");
+          if (!w) {
+            // 새탭도 막히면(정말 강한 차단) 같은 탭으로라도 열기
+            window.location.href = naverUrl;
+            return;
+          }
         }
       } else {
-        // 미리 안 열었거나(입력에 키워드가 없었는데) 허용으로 나온 경우 fallback
+        // 선오픈이 없었는데 허용으로 판정된 경우(예: 지오코딩 label에 키워드 포함)
         const w = window.open(naverUrl, "_blank", "noopener,noreferrer");
         if (!w) {
-          // 팝업이 막히면 현재 탭으로 네이버맵 이동
           window.location.href = naverUrl;
           return;
         }
@@ -265,16 +259,13 @@ function isServiceAreaByAddressName(addressName) {
 
       pushHistory(`지역(서비스내): ${q}`, naverUrl);
 
-      // ✅ 현재 페이지는 다음 단계로 이동
       const nextUrl =
         `${nextPage}?q=${encodeURIComponent(q)}&type=${encodeURIComponent(type)}&inService=1`;
 
       pushHistory(`다음단계 이동: ${q}`, nextUrl);
       location.href = nextUrl;
-      return;
-
     } catch (e) {
-      if (preOpenedPopup) preOpenedPopup.close();
+      if (popup) popup.close();
       const msg = String(e?.message || e);
       alert("처리 중 오류가 발생했어요.\n" + msg);
     } finally {
@@ -282,4 +273,14 @@ function isServiceAreaByAddressName(addressName) {
     }
   }
 
-  // ✅ submi
+  // ✅ submit 하나로 끝(버튼 클릭/엔터 모두 여기로 옴)
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const q = normalize(input.value);
+    const popup = preOpenPopupIfLikely(q); // 클릭 순간 선오픈(필요할 때만)
+    onSearch(popup);
+  });
+
+  initCompany({ silent: true });
+})();
