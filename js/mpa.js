@@ -21,15 +21,11 @@ function isServiceAreaByAddressName(addressName) {
   const input = document.getElementById("q");
   const submitBtn = form?.querySelector('button[type="submit"]');
 
-  // ✅ [다음으로] 버튼
   const nextBtn = document.getElementById("nextBtn");
-  // ✅ [이전으로] 버튼
   const prevBtn = document.getElementById("prevBtn");
 
-  // 폼이 없는 페이지면 종료 (안전)
   if (!form || !input) return;
 
-  // ✅ 타입 읽기 (index.html에서 maps.html?type=xxx 로 넘어옴)
   function getType() {
     return (
       new URLSearchParams(window.location.search).get("type") ||
@@ -38,7 +34,6 @@ function isServiceAreaByAddressName(addressName) {
     );
   }
 
-  // ✅ 타입별 "다음 단계" 페이지 매핑
   const NEXT_PAGE_BY_TYPE = {
     boiler:  "installation_boiler.html",
     gas:     "installation_gas.html",
@@ -48,7 +43,6 @@ function isServiceAreaByAddressName(addressName) {
     sash:    "installation_sash.html",
   };
 
-  // ✅ 기본 fallback (타입이 없거나 매핑이 없을 때)
   const DEFAULT_NEXT_PAGE = "installation_gas2.html";
 
   function getNextPageByType(type) {
@@ -58,10 +52,8 @@ function isServiceAreaByAddressName(addressName) {
   // ✅ 비허용지역(서비스 외)일 때 이동할 HTML
   const OUTSIDE_SERVICE_PAGE = "connection.html";
 
-  // ✅ (선택) 다음으로 눌렀을 때 히스토리에 남기고 싶으면 true
   const SAVE_NEXT_TO_HISTORY = true;
 
-  // ✅ 회사 주소 고정
   const COMPANY = {
     name: "선두에너지",
     address: "인천 서구 청마로34번길 32-9",
@@ -111,18 +103,15 @@ function isServiceAreaByAddressName(addressName) {
       throw new Error("GEOCODE_NON_JSON_RESPONSE");
     }
 
-    // ✅ 카카오 API 에러 처리
     if (!res.ok) {
       const msg = data?.message || data?.error || "API error";
       throw new Error(`KAKAOMAP_ERROR: ${msg}`);
     }
 
-    // ✅ x/y를 '숫자'로 안전하게 검증
     const x = Number(data?.x);
     const y = Number(data?.y);
     if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
 
-    // ✅ label(=address_name) 말고도, 입력값(q)도 같이 들고 있어 판별에 활용 가능
     return {
       x,
       y,
@@ -157,7 +146,6 @@ function isServiceAreaByAddressName(addressName) {
     }
   }
 
-  // ✅ 히스토리에 남기는 헬퍼
   function pushHistory(label, url) {
     const STORAGE_KEY = "sundoo_selection_history";
     try {
@@ -165,22 +153,19 @@ function isServiceAreaByAddressName(addressName) {
       arr.push({ label, url, ts: Date.now() });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(arr.slice(-30)));
     } catch {
-      // localStorage 문제 있어도 동작은 계속
+      // ignore
     }
   }
 
-  // ✅ [이전으로] 클릭
+  // ✅ [이전으로]
   if (prevBtn) {
     prevBtn.addEventListener("click", () => {
-      if (window.history.length > 1) {
-        window.history.back();
-      } else {
-        window.location.href = "index2.html";
-      }
+      if (window.history.length > 1) window.history.back();
+      else window.location.href = "index2.html";
     });
   }
 
-  // ✅ [다음으로] 클릭 시 - 지도검색 안 하고 다음단계로 이동 (type별 분기)
+  // ✅ [다음으로] (지도 스킵)
   if (nextBtn) {
     nextBtn.addEventListener("click", () => {
       const q = normalize(input.value);
@@ -202,32 +187,49 @@ function isServiceAreaByAddressName(addressName) {
     });
   }
 
-  // ✅ 검색(엔터/버튼) 시:
-  // - 허용지역: 네이버맵 새창 + 현재 페이지는 nextPage로 이동
-  // - 비허용지역: 네이버맵 X + 현재 페이지는 OUTSIDE_SERVICE_PAGE로 이동
-  async function onSearch() {
+  // ✅ 팝업 핸들(클릭 순간에 열어두기)
+  // - 입력값에 허용 키워드가 있으면 미리 열기(팝업차단 회피)
+  // - 나중에 최종 판정이 비허용이면 닫기
+  let pendingPopup = null;
+
+  function preOpenPopupIfLikelyInService(q) {
+    // 입력값이 "인천 ..." "서울 ..." 이런 경우에만 팝업 미리 확보
+    if (!isServiceAreaByAddressName(q)) return null;
+
+    const w = window.open("about:blank", "_blank", "noopener,noreferrer");
+    // 팝업이 막히면 null일 수 있음
+    return w;
+  }
+
+  async function onSearch(preOpenedPopup) {
     const q = normalize(input.value);
-    if (!q) return alert("고객 주소(지역/주소)를 입력해주세요.");
+    if (!q) {
+      if (preOpenedPopup) preOpenedPopup.close();
+      return alert("고객 주소(지역/주소)를 입력해주세요.");
+    }
 
     const type = getType();
     if (type) localStorage.setItem("consult_type", type);
 
     const nextPage = getNextPageByType(type);
 
-    // 회사 좌표 없으면 검색 시점에 다시 시도 + 이때만 안내
     if (!companyCoords) {
       await initCompany({ silent: false });
-      if (!companyCoords) return;
+      if (!companyCoords) {
+        if (preOpenedPopup) preOpenedPopup.close();
+        return;
+      }
     }
 
     setBusy(true);
     try {
       const customer = await geocode(q);
-
       const areaText = (customer?.label || "") + " " + (customer?.raw || "");
 
-      // ✅ 비허용지역(또는 지오코딩 실패): 새창 X + OUTSIDE_SERVICE_PAGE로 이동
+      // ✅ 비허용지역: 팝업 있으면 닫고, connection.html로 이동
       if (!customer || !isServiceAreaByAddressName(areaText)) {
+        if (preOpenedPopup) preOpenedPopup.close();
+
         const outUrl =
           `${OUTSIDE_SERVICE_PAGE}?q=${encodeURIComponent(q)}&type=${encodeURIComponent(type)}&inService=0`;
 
@@ -236,28 +238,43 @@ function isServiceAreaByAddressName(addressName) {
         return;
       }
 
-      // ✅ 허용지역: 여기서만 새창 열기 (비허용지역은 새창 안 열림!)
-      const popup = window.open("about:blank", "_blank", "noopener,noreferrer");
-
+      // ✅ 허용지역: 네이버맵 URL 생성
       const naverUrl = buildDirectionsUrl(
         { x: companyCoords.x, y: companyCoords.y, name: companyCoords.name },
         { x: customer.x, y: customer.y, name: customer.label }
       );
 
-      if (popup) popup.location.href = naverUrl;
-      else window.open(naverUrl, "_blank", "noopener,noreferrer");
+      // ✅ 허용지역: 팝업이 이미 열려있으면 그 창을 네이버맵으로 이동
+      if (preOpenedPopup) {
+        try {
+          preOpenedPopup.location.href = naverUrl;
+        } catch {
+          // 이동 실패 시 fallback
+          window.location.href = naverUrl;
+          return;
+        }
+      } else {
+        // 미리 안 열었거나(입력에 키워드가 없었는데) 허용으로 나온 경우 fallback
+        const w = window.open(naverUrl, "_blank", "noopener,noreferrer");
+        if (!w) {
+          // 팝업이 막히면 현재 탭으로 네이버맵 이동
+          window.location.href = naverUrl;
+          return;
+        }
+      }
 
       pushHistory(`지역(서비스내): ${q}`, naverUrl);
 
+      // ✅ 현재 페이지는 다음 단계로 이동
       const nextUrl =
         `${nextPage}?q=${encodeURIComponent(q)}&type=${encodeURIComponent(type)}&inService=1`;
 
       pushHistory(`다음단계 이동: ${q}`, nextUrl);
-
       location.href = nextUrl;
       return;
 
     } catch (e) {
+      if (preOpenedPopup) preOpenedPopup.close();
       const msg = String(e?.message || e);
       alert("처리 중 오류가 발생했어요.\n" + msg);
     } finally {
@@ -265,18 +282,4 @@ function isServiceAreaByAddressName(addressName) {
     }
   }
 
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    onSearch();
-  });
-
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      onSearch();
-    }
-  });
-
-  // ✅ 페이지 로드시 회사 좌표 선계산 (로드 시엔 팝업 띄우지 않음)
-  initCompany({ silent: true });
-})();
+  // ✅ submi
