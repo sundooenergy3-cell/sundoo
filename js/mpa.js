@@ -55,7 +55,7 @@ function isServiceAreaByAddressName(addressName) {
     return NEXT_PAGE_BY_TYPE[type] || DEFAULT_NEXT_PAGE;
   }
 
-  // ✅ 비허용지역(서비스 외)일 때 이동할 HTML (여기만 바꾸면 됨!)
+  // ✅ 비허용지역(서비스 외)일 때 이동할 HTML
   const OUTSIDE_SERVICE_PAGE = "connection.html";
 
   // ✅ (선택) 다음으로 눌렀을 때 히스토리에 남기고 싶으면 true
@@ -214,17 +214,10 @@ function isServiceAreaByAddressName(addressName) {
 
     const nextPage = getNextPageByType(type);
 
-    // ✅ (팝업 차단 최소화) 사용자 액션 시점에 미리 창을 열어둠
-    // - 비허용지역이면 닫을 예정
-    const popup = window.open("about:blank", "_blank", "noopener,noreferrer");
-
     // 회사 좌표 없으면 검색 시점에 다시 시도 + 이때만 안내
     if (!companyCoords) {
       await initCompany({ silent: false });
-      if (!companyCoords) {
-        if (popup) popup.close();
-        return;
-      }
+      if (!companyCoords) return;
     }
 
     setBusy(true);
@@ -233,10 +226,8 @@ function isServiceAreaByAddressName(addressName) {
 
       const areaText = (customer?.label || "") + " " + (customer?.raw || "");
 
-      // ✅ 비허용지역(또는 지오코딩 실패): 네이버맵 안띄움 + OUTSIDE_SERVICE_PAGE로 이동
+      // ✅ 비허용지역(또는 지오코딩 실패): 새창 X + OUTSIDE_SERVICE_PAGE로 이동
       if (!customer || !isServiceAreaByAddressName(areaText)) {
-        if (popup) popup.close();
-
         const outUrl =
           `${OUTSIDE_SERVICE_PAGE}?q=${encodeURIComponent(q)}&type=${encodeURIComponent(type)}&inService=0`;
 
@@ -245,7 +236,9 @@ function isServiceAreaByAddressName(addressName) {
         return;
       }
 
-      // ✅ 허용지역: 네이버 길찾기 열기 + nextPage로 이동
+      // ✅ 허용지역: 여기서만 새창 열기 (비허용지역은 새창 안 열림!)
+      const popup = window.open("about:blank", "_blank", "noopener,noreferrer");
+
       const naverUrl = buildDirectionsUrl(
         { x: companyCoords.x, y: companyCoords.y, name: companyCoords.name },
         { x: customer.x, y: customer.y, name: customer.label }
@@ -265,7 +258,6 @@ function isServiceAreaByAddressName(addressName) {
       return;
 
     } catch (e) {
-      if (popup) popup.close();
       const msg = String(e?.message || e);
       alert("처리 중 오류가 발생했어요.\n" + msg);
     } finally {
