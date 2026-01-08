@@ -3,7 +3,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (retryBtn) {
     retryBtn.addEventListener("click", () => {
-      location.href = "index.html";
+      location.href = "index2.html";
     });
   }
+
 });
