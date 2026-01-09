@@ -3,8 +3,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (retryBtn) {
     retryBtn.addEventListener("click", () => {
-      location.href = "index2.html";
+      location.href = "mobile.html";
     });
   }
 
 });
+
