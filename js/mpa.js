@@ -171,12 +171,12 @@ function isServiceAreaByAddressName(addressName) {
 
   // ✅ [이전으로] 클릭
   if (prevBtn) {
-  prevBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    window.location.href = "index2.html";
-  });
-}
+    prevBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      window.location.href = "index2.html";
+    });
+  }
 
   // ✅ [다음으로] 클릭 시 - 지도검색 안 하고 다음단계로 이동 (type별 분기)
   if (nextBtn) {
@@ -214,7 +214,10 @@ function isServiceAreaByAddressName(addressName) {
 
     // ✅ (팝업 차단 최소화) 사용자 액션 시점에 미리 창을 열어둠
     // - 비허용지역이면 닫을 예정
-    const popup = window.open("about:blank", "_blank", "noopener,noreferrer");
+    // 🔧 수정: features("noopener,noreferrer") 제거 (이동 막힘 이슈 방지)
+    const popup = window.open("about:blank", "_blank");
+    // (선택) 보안상 opener 끊기
+    if (popup) popup.opener = null;
 
     // 회사 좌표 없으면 검색 시점에 다시 시도 + 이때만 안내
     if (!companyCoords) {
@@ -249,8 +252,9 @@ function isServiceAreaByAddressName(addressName) {
         { x: customer.x, y: customer.y, name: customer.label }
       );
 
-      if (popup) popup.location.href = naverUrl;
-      else window.open(naverUrl, "_blank", "noopener,noreferrer");
+      // 🔧 수정: href 대신 replace (about:blank 잔류 방지/성공률↑)
+      if (popup) popup.location.replace(naverUrl);
+      else window.open(naverUrl, "_blank");
 
       pushHistory(`지역(서비스내): ${q}`, naverUrl);
 
