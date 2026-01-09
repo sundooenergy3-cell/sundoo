@@ -26,8 +26,7 @@
     <!-- 본문 -->
     <div class="container">
       <header class="logo-area">
-        <!-- ✅ 상대경로 대신 루트 절대경로 -->
-        <a href="/mobile.html">
+        <a href="mobile.html">
           <img src="img/logo.png" alt="SUNDOO" class="logo" />
         </a>
       </header>
@@ -180,28 +179,21 @@ ${history.slice().reverse().map(h => `- ${h.label}`).join("\n")}`.trim();
       }
     });
 
-    // ✅✅✅ 전체 초기화: index2.html로 "무조건" 이동 (루트 절대경로 + 강제 재시도)
+    // ✅✅✅ 전체 초기화 (중요):
+    // 여기 페이지에서 localStorage를 지우지 말고,
+    // index2.html?reset=1 로 먼저 이동해서 index2에서 지우게 해야 app.js 가드에 안 걸림
     document.getElementById("resetAllBtn").addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
 
+      // index2에서 reset 처리하도록 플래그/쿼리만 전달
       sessionStorage.setItem("RESET_ALL_REQUESTED", "1");
 
       alert("전체 기록/선택을 초기화합니다. 홈으로 이동합니다.");
 
-      // ✅ 무조건 루트 기준으로 이동
-      const target = `${window.location.origin}/index2.html`;
-
-      // 1차 이동
-      window.location.replace(target);
-
-      // 혹시 다른 스크립트(app.js 가드 등)가 /로 돌려버리면 0.3초 뒤 재강제
-      setTimeout(() => {
-        if (!/\/mobile\.html$/i.test(window.location.pathname)) {
-          window.location.href = target;
-        }
-      }, 300);
+      // 절대경로로 이동 (상대경로 문제 방지)
+      location.replace("/mobile.html");
     }, true);
 
     // ✅ 슬라이드 전환 (요약 -> 사진)
@@ -235,4 +227,4 @@ ${history.slice().reverse().map(h => `- ${h.label}`).join("\n")}`.trim();
   </script>
 </body>
 </html>
-
+여기코드에서 index2 로 넘어가게 설정해났어 근데 vs코드에서는 작동잘되는데 깃허브에 올리고 vercel에서 배포하면 index페이지로 넘어가버려 
