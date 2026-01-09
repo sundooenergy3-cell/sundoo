@@ -179,21 +179,45 @@ ${history.slice().reverse().map(h => `- ${h.label}`).join("\n")}`.trim();
       }
     });
 
-    // ✅✅✅ 전체 초기화 (중요):
-    // 여기 페이지에서 localStorage를 지우지 말고,
-    // index2.html?reset=1 로 먼저 이동해서 index2에서 지우게 해야 app.js 가드에 안 걸림
+    // ✅✅✅ 전체 초기화 (index2로 "확실히" 보내기)
     document.getElementById("resetAllBtn").addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
 
-      // index2에서 reset 처리하도록 플래그/쿼리만 전달
+      // index2에서 reset 처리하도록 플래그 전달
       sessionStorage.setItem("RESET_ALL_REQUESTED", "1");
 
       alert("전체 기록/선택을 초기화합니다. 홈으로 이동합니다.");
 
-      // 절대경로로 이동 (상대경로 문제 방지)
-      location.replace("index2.html");
+      // ✅ 어디서 실행되든 루트(/)의 index2.html로 이동을 최우선으로 시도
+      const urlCandidates = [
+        new URL("/index2.html", window.location.origin).toString(), // 1순위: 루트 기준
+        new URL("index2.html", window.location.href).toString(),    // 2순위: 현재 경로 기준
+        new URL("../index2.html", window.location.href).toString(), // 3순위: 한 단계 위
+      ];
+
+      let i = 0;
+
+      const go = () => {
+        const target = urlCandidates[i] || urlCandidates[0];
+        try {
+          window.location.replace(target);
+        } catch {
+          window.location.href = target;
+        }
+        i++;
+      };
+
+      // 1차 이동
+      go();
+
+      // 만약 라우팅/리라이트로 인해 이동이 씹히거나 같은 페이지면 후보를 한 번 더 시도
+      setTimeout(() => {
+        if (!/index2\.html$/i.test(window.location.pathname) && i < urlCandidates.length) {
+          go();
+        }
+      }, 1200);
     }, true);
 
     // ✅ 슬라이드 전환 (요약 -> 사진)
@@ -227,5 +251,3 @@ ${history.slice().reverse().map(h => `- ${h.label}`).join("\n")}`.trim();
   </script>
 </body>
 </html>
-
-
