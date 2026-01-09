@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>전화상담도우미</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="css/installation_gas5.css" />
+
+  <!-- ✅ 공용 기록 렌더 -->
+  <script src="js/app.js" defer></script>
+</head>
+
+<body>
+  <main class="page">
+    <aside class="history" aria-label="선택 기록">
+      <div class="history-head">
+        <h2 class="history-title">선택 기록</h2>
+        <button type="button" class="history-clear">지우기</button>
+      </div>
+
+      <ul class="history-list"></ul>
+      <p class="history-hint">이전 단계 선택이 저장됩니다.</p>
+    </aside>
+
+    <div class="container">
+      <header class="logo-area">
+        <a href="/index2.html" class="logo-link" aria-label="홈으로">
+          <img src="img/logo.png" alt="SUNDOO" class="logo" />
+        </a>
+      </header>
+
+      <main class="content" aria-label="용량 선택">
+        <h1 class="price" id="price">+0원</h1>
+
+        <div class="subtitle-row">
+          <p class="subtitle">용량을 확인해주세요.</p>
+          <button type="button" class="prev-btn" id="prevBtn">이전으로</button>
+        </div>
+
+        <section class="grid" aria-label="용량 선택 카드">
+          <button type="button" class="card" data-cap="8">
+            <span class="card-title">8리터</span>
+            <span class="card-sub">1명 간단한 샤워</span>
+          </button>
+
+          <button type="button" class="card" data-cap="10">
+            <span class="card-title">10리터</span>
+            <span class="card-sub">1명 샤워</span>
+          </button>
+
+          <button type="button" class="card" data-cap="14">
+            <span class="card-title">14리터</span>
+            <span class="card-sub">1명 샤워, 1명 세면</span>
+          </button>
+
+          <button type="button" class="card" data-cap="18">
+            <span class="card-title">18리터</span>
+            <span class="card-sub">2명 샤워</span>
+          </button>
+
+          <button type="button" class="card" data-cap="24">
+            <span class="card-title">24리터</span>
+            <span class="card-sub">2명 샤워, 1명 세면</span>
+          </button>
+
+          <button type="button" class="card" data-cap="none">
+            <span class="card-title">-</span>
+            <span class="card-sub">&nbsp;</span>
+          </button>
+        </section>
+      </main>
+    </div>
+  </main>
+
+  <script>
+    const NEXT_URL = "installation_gas6.html";
+
+    const PRICE_BY_CAP = {
+      "8":  600000,
+      "10": 620000,
+      "14": 650000,
+      "18": 710000,
+      "24": 760000,
+      "none": 0,
+    };
+
+    const priceEl = document.getElementById("price");
+    const prevBtn = document.getElementById("prevBtn");
+    const cards = Array.from(document.querySelectorAll(".card"));
+
+    const PRICE_KEY = "install_price";
+    const CAP_KEY = "gas_capacity";
+    const CAP_PRICE_KEY = "gas_capacity_price";
+    const HISTORY_KEY = "sundoo_selection_history";
+
+    // ✅ gas5에서 "용량 선택 전(=그전 시트 금액)" 저장
+    const BASE_BEFORE_CAP_KEY = "install_price_before_capacity";
+
+    // ✅ gas6 갔다가 뒤로 돌아왔을 때만 리셋하기 위한 플래그
+    const RESET_ON_RETURN_KEY = "gas5_reset_on_return";
+
+    function getTotal() {
+      const n = Number(localStorage.getItem(PRICE_KEY) || 0);
+      return Number.isFinite(n) ? Math.max(0, n) : 0;
+    }
+
+    function setTotal(v) {
+      const val = Math.max(0, Number(v) || 0);
+      localStorage.setItem(PRICE_KEY, String(val));
+      priceEl.textContent = `+${val.toLocaleString()}원`;
+    }
+
+    function pushHistory(label, url) {
+      try {
+        const arr = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+        const list = Array.isArray(arr) ? arr : [];
+        list.push({ label, url, ts: Date.now() });
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(-60)));
+      } catch {}
+    }
+
+    function clearActiveCards() {
+      cards.forEach((c) => c.classList.remove("active"));
+    }
+
+    function setActiveCard(cap) {
+      cards.forEach((c) => c.classList.toggle("active", c.dataset.cap === cap));
+    }
+
+    /**
+     * ✅ 진입 시 처리
+     * 1) 화면에는 일단 현재 install_price를 그대로 보여줌 (처음 진입 0원 방지)
+     * 2) base(그전 시트 금액)를 저장해둠
+     * 3) "gas6 갔다가 뒤로 돌아온 경우"에만:
+     *    - install_price를 base로 복원
+     *    - 용량 선택 값 삭제 + 선택 표시 제거
+     */
+    (function initGas5() {
+      const totalNow = getTotal();
+
+      // 1) 일단 화면 표시(처음 진입 0원 방지)
+      priceEl.textContent = `+${totalNow.toLocaleString()}원`;
+
+      // 2) base 저장/보정
+      // - 혹시 totalNow에 용량금액이 섞여 있으면(base 재계산) base=totalNow-capPrice
+      const savedCapPrice = Number(localStorage.getItem(CAP_PRICE_KEY) || 0);
+      const capPriceSafe = Number.isFinite(savedCapPrice) ? savedCapPrice : 0;
+
+      let base = totalNow;
+      if (capPriceSafe > 0 && totalNow >= capPriceSafe) {
+        base = Math.max(0, totalNow - capPriceSafe);
+      }
+
+      // base가 없거나 0이면(예: 첫 진입인데 install_price가 0인 특이 케이스) 덮어쓰지 않도록
+      // -> 그래도 base는 저장해두는 게 좋으니, "키가 없을 때만" 저장
+      if (localStorage.getItem(BASE_BEFORE_CAP_KEY) === null) {
+        localStorage.setItem(BASE_BEFORE_CAP_KEY, String(base));
+      }
+
+      // 3) gas6 갔다가 돌아온 경우에만 리셋/복원
+      const needReset = localStorage.getItem(RESET_ON_RETURN_KEY) === "1";
+      if (needReset) {
+        const baseBeforeCap = Number(localStorage.getItem(BASE_BEFORE_CAP_KEY) || base || 0);
+
+        // 금액을 base로 복원
+        setTotal(baseBeforeCap);
+
+        // 선택 상태 제거(누른 상태 X)
+        localStorage.removeItem(CAP_KEY);
+        localStorage.removeItem(CAP_PRICE_KEY);
+        clearActiveCards();
+
+        // 플래그 제거(다음에는 리셋 안 함)
+        localStorage.removeItem(RESET_ON_RETURN_KEY);
+      } else {
+        // 리셋이 아닌 경우(처음 진입 등): 이전 선택 표시를 원하면 아래 2줄 사용
+        const savedCap = localStorage.getItem(CAP_KEY);
+        if (savedCap) setActiveCard(savedCap);
+      }
+    })();
+
+    // ✅ 카드 클릭 → “기준금액(base) + 용량금액”으로 설정
+    function applyCapacity(cap) {
+      const base = Number(localStorage.getItem(BASE_BEFORE_CAP_KEY) || getTotal() || 0);
+      const capPrice = Number(PRICE_BY_CAP[cap] ?? 0);
+
+      const newTotal = Math.max(0, base + capPrice);
+
+      localStorage.setItem(CAP_KEY, cap);
+      localStorage.setItem(CAP_PRICE_KEY, String(capPrice));
+
+      setTotal(newTotal);
+      setActiveCard(cap);
+
+      return capPrice;
+    }
+
+    cards.forEach((card) => {
+      card.addEventListener("click", () => {
+        const cap = String(card.dataset.cap || "none");
+        const capPrice = applyCapacity(cap);
+
+        const capLabel = cap === "none" ? "-" : `${cap}리터`;
+        pushHistory(`용량 선택: ${capLabel} (+${capPrice.toLocaleString()}원)`, NEXT_URL);
+
+        // ✅ gas6 갔다가 뒤로 돌아오면 gas5에서 리셋하도록 플래그 설정
+        localStorage.setItem(RESET_ON_RETURN_KEY, "1");
+
+        location.href = NEXT_URL;
+      });
+    });
+
+    /**
+     * ✅ 이전으로
+     * - gas4 금액(base)로 복원
+     * - 용량 선택 상태 제거
+     * - gas4로 이동
+     */
+    prevBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+
+      const baseBeforeCap = Number(localStorage.getItem(BASE_BEFORE_CAP_KEY) || 0);
+      localStorage.setItem(PRICE_KEY, String(Math.max(0, baseBeforeCap)));
+
+      localStorage.removeItem(CAP_KEY);
+      localStorage.removeItem(CAP_PRICE_KEY);
+      localStorage.removeItem(BASE_BEFORE_CAP_KEY);
+      localStorage.removeItem(RESET_ON_RETURN_KEY);
+
+      location.href = "installation_gas4.html";
+    });
+  </script>
+</body>
+</html>
