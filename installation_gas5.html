@@ -27,7 +27,7 @@
     <div class="container">
       <header class="logo-area">
         <!-- ✅ 상대경로 대신 루트 절대경로 -->
-        <a href="/index2.html">
+        <a href="/mobile.html">
           <img src="img/logo.png" alt="SUNDOO" class="logo" />
         </a>
       </header>
@@ -198,7 +198,7 @@ ${history.slice().reverse().map(h => `- ${h.label}`).join("\n")}`.trim();
 
       // 혹시 다른 스크립트(app.js 가드 등)가 /로 돌려버리면 0.3초 뒤 재강제
       setTimeout(() => {
-        if (!/\/index2\.html$/i.test(window.location.pathname)) {
+        if (!/\/mobile\.html$/i.test(window.location.pathname)) {
           window.location.href = target;
         }
       }, 300);
@@ -235,3 +235,4 @@ ${history.slice().reverse().map(h => `- ${h.label}`).join("\n")}`.trim();
   </script>
 </body>
 </html>
+
