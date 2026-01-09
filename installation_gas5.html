@@ -26,7 +26,8 @@
     <!-- 본문 -->
     <div class="container">
       <header class="logo-area">
-        <a href="index2.html">
+        <!-- ✅ 상대경로 대신 루트 절대경로 -->
+        <a href="/index2.html">
           <img src="img/logo.png" alt="SUNDOO" class="logo" />
         </a>
       </header>
@@ -179,45 +180,28 @@ ${history.slice().reverse().map(h => `- ${h.label}`).join("\n")}`.trim();
       }
     });
 
-    // ✅✅✅ 전체 초기화 (index2로 "확실히" 보내기)
+    // ✅✅✅ 전체 초기화: index2.html로 "무조건" 이동 (루트 절대경로 + 강제 재시도)
     document.getElementById("resetAllBtn").addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
 
-      // index2에서 reset 처리하도록 플래그 전달
       sessionStorage.setItem("RESET_ALL_REQUESTED", "1");
 
       alert("전체 기록/선택을 초기화합니다. 홈으로 이동합니다.");
 
-      // ✅ 어디서 실행되든 루트(/)의 index2.html로 이동을 최우선으로 시도
-      const urlCandidates = [
-        new URL("/index2.html", window.location.origin).toString(), // 1순위: 루트 기준
-        new URL("index2.html", window.location.href).toString(),    // 2순위: 현재 경로 기준
-        new URL("../index2.html", window.location.href).toString(), // 3순위: 한 단계 위
-      ];
-
-      let i = 0;
-
-      const go = () => {
-        const target = urlCandidates[i] || urlCandidates[0];
-        try {
-          window.location.replace(target);
-        } catch {
-          window.location.href = target;
-        }
-        i++;
-      };
+      // ✅ 무조건 루트 기준으로 이동
+      const target = `${window.location.origin}/index2.html`;
 
       // 1차 이동
-      go();
+      window.location.replace(target);
 
-      // 만약 라우팅/리라이트로 인해 이동이 씹히거나 같은 페이지면 후보를 한 번 더 시도
+      // 혹시 다른 스크립트(app.js 가드 등)가 /로 돌려버리면 0.3초 뒤 재강제
       setTimeout(() => {
-        if (!/index2\.html$/i.test(window.location.pathname) && i < urlCandidates.length) {
-          go();
+        if (!/\/index2\.html$/i.test(window.location.pathname)) {
+          window.location.href = target;
         }
-      }, 1200);
+      }, 300);
     }, true);
 
     // ✅ 슬라이드 전환 (요약 -> 사진)
