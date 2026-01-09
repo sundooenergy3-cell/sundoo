@@ -1,0 +1,264 @@
+/* =========================
+   Variables
+========================= */
+:root {
+  --blue: #006cff;
+  --text: #555555;
+  --box-gray: #f2f2f2;
+  --line: #e8e8e8;
+  --muted: #888;
+}
+
+/* reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Pretendard", system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", sans-serif;
+  background: #ffffff;
+  color: #111;
+}
+
+/* layout */
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 7rem;
+}
+
+/* logo */
+.logo-area {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.logo {
+  height: 70px;
+  width: auto;
+  display: block;
+  object-fit: cover;
+}
+
+.brand-name {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* content */
+.content {
+  text-align: center;
+}
+
+.title {
+  margin: 0 0 18px;
+  font-size: clamp(28px, 4vw, 60px);
+  font-weight: 700;
+  letter-spacing: 0.1rem;
+}
+
+/* ✅ subtitle는 문구만 담당 */
+.subtitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  color: #333333;
+}
+
+/* ✅ 문구 + 버튼(이전/다음) 한 줄 */
+.subtitle-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 4rem 0 4rem;
+}
+
+/* ✅ 버튼 2개 묶음 */
+.hero__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ✅ maps.html 느낌의 알약 버튼 (공통) */
+.nav-btn,
+.prev-btn {
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.nav-btn:hover,
+.prev-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+  transform: translateY(-1px);
+}
+
+/* ✅ 파란색(다음) */
+.nav-btn.primary {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #fff;
+}
+
+.nav-btn.primary:hover {
+  background: #0057d6;
+}
+
+/* 버튼 영역 (✅ 3칸 x 2줄 grid) */
+.button-wrap {
+  display: grid;
+  grid-template-columns: repeat(3, 160px);
+  gap: 20px;
+  justify-content: center;
+}
+
+/* 기본 버튼 */
+.type-btn {
+  width: 160px;
+  height: 160px;
+  border: none;
+  border-radius: 16px;
+  background-color: #f2f2f2;
+  color: #222;
+  font-size: 28px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* hover */
+.type-btn:hover {
+  background-color: #006cff;
+  color: #ffffff;
+}
+
+/* 선택된 상태 */
+.type-btn.active {
+  background-color: #006cff;
+  color: #ffffff;
+}
+
+.sub-text {
+  font-size: 16px;
+}
+
+/* =========================
+   Layout
+========================= */
+.page {
+  display: block;
+  padding: 0 16px;
+}
+
+.wrap {
+  width: min(720px, 100%);
+  text-align: center;
+  margin: 0 auto;
+}
+
+/* =========================
+   History Panel (Left)
+========================= */
+.history {
+  width: 350px;
+  flex: 0 0 240px;
+
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+
+  position: fixed;
+  top: 23%;
+  left: 9%;
+  align-self: flex-start;
+}
+
+.history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.history-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111;
+}
+
+.history-clear {
+  border: 0;
+  background: transparent;
+  color: var(--blue);
+  cursor: pointer;
+  font-weight: 600;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+
+.history-clear:hover {
+  background: rgba(0, 108, 255, 0.08);
+}
+
+.history-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  max-height: 360px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.history-item {
+  font-size: 14px;
+  color: #222;
+  background: #f7f7f7;
+  border-radius: 10px;
+  padding: 10px;
+  line-height: 1.35;
+}
+
+.history-item time {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #777;
+}
+
+.history-hint {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* 모바일 대응 */
+@media (max-width: 900px) {
+  .history {
+    position: static;
+    width: min(720px, 100%);
+    margin: 18px auto 0;
+  }
+
+  .button-wrap {
+    grid-template-columns: repeat(2, 160px);
+  }
+}
