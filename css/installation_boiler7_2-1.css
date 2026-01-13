@@ -1,0 +1,29 @@
+.button-wrap.grid-6{
+  display: grid;
+  grid-template-columns: repeat(3, 160px);
+  gap: 18px;
+  justify-content: center;
+}
+.card-title {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.6;
+  white-space: nowrap;   
+}
+
+/*  아래 설명은 작은 글씨로 자연스럽게 */
+.card-sub {
+  display: block;
+  width: 100%;
+
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.25;
+
+  /* 한글이 글자 단위로 뚝뚝 끊기는 현상 방지 */
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
