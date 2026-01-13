@@ -53,15 +53,15 @@
     const PRICE_KEY = "install_price";
     const THERMO_KEY = "thermostat_type";
 
-    // ✅ 이 페이지 진입 시점의 기준금액(리셋용)
+    // ✅ 이 페이지 진입 시점 기준 금액 저장
     const BASE_KEY = "install_price_before_thermostat";
 
-    // ✅ 다음 페이지에서 "이전으로"로 돌아온 경우 리셋시키는 플래그
+    // ✅ 다음 페이지에서 '이전으로' 눌러 돌아왔는지 플래그
     const BACK_FLAG = "came_back_thermostat";
 
     const ADD_PRICE_ROOM = 50000;
 
-    // ✅ 히스토리
+    // ✅ 히스토리 저장
     const HISTORY_KEY = "sundoo_selection_history";
     function pushHistory(label, url) {
       try {
@@ -72,7 +72,7 @@
       } catch {}
     }
 
-    // ✅ "+135,000원" / "135,000" / "135000" 모두 OK
+    // ✅ "+135,000원" / "135,000" / "135000" 전부 숫자로
     function toNum(v) {
       if (v == null) return 0;
       const cleaned = String(v).replace(/[^\d.-]/g, "");
@@ -92,7 +92,7 @@
       render(n);
     }
 
-    // ✅ base 보장: 없으면 현재 install_price로 base 생성
+    // ✅ base 보장: BASE_KEY 없으면 현재 install_price를 base로 저장
     function ensureBase() {
       const saved = localStorage.getItem(BASE_KEY);
       if (saved !== null && saved !== "") return clamp0(saved);
@@ -104,11 +104,13 @@
 
     /**
      * ✅ init
-     * - 다음 페이지에서 이전으로 돌아오면(base로) 리셋
-     * - 정상 진입이면 base 저장 + 현재가 표시
+     * - 다음 페이지에서 "이전으로"로 돌아온 경우: base로 리셋
+     * - 정상 진입: base 저장 + 현재가 표시
      */
     (function init() {
-      // 돌아온 경우: base로 리셋 + 선택값 제거
+      buttons.forEach(b => b.classList.remove("active"));
+
+      // 🔙 돌아옴: base로 원복 + 선택 제거
       if (localStorage.getItem(BACK_FLAG) === "1") {
         const base = ensureBase();
 
@@ -116,49 +118,45 @@
         localStorage.removeItem(THERMO_KEY);
         localStorage.removeItem(BACK_FLAG);
 
-        buttons.forEach(b => b.classList.remove("active"));
         render(base);
         return;
       }
 
-      // 정상 진입: base 확보(저장) + 현재가 표시
+      // ▶ 정상 진입: base 확보 후 현재 금액 표시
       const base = ensureBase();
-      render(clamp0(localStorage.getItem(PRICE_KEY)) || base);
-
-      buttons.forEach(b => b.classList.remove("active"));
+      const current = clamp0(localStorage.getItem(PRICE_KEY));
+      render(current || base);
     })();
 
     /**
-     * ✅ 카드 클릭: 금액 즉시 반영 → 다음페이지 이동
+     * ✅ 카드 클릭: 즉시 금액 반영 후 다음 페이지 이동
      */
     buttons.forEach((btn) => {
       btn.addEventListener("click", () => {
         buttons.forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
 
-        const thermo = btn.dataset.thermo; // room | single
+        const thermo = btn.dataset.thermo;
         if (!thermo) return;
 
+        // 선택 저장
         localStorage.setItem(THERMO_KEY, thermo);
 
+        // 기준금액(base) 기준으로 계산
         const base = ensureBase();
         const nextPrice = (thermo === "room") ? (base + ADD_PRICE_ROOM) : base;
 
         // ✅ 즉시 반영
         setPrice(nextPrice);
 
+        // ✅ 기록 저장
         const nextUrl = "installation_boiler4.html";
         pushHistory(
           `온도조절: ${thermo === "room" ? `각방(+${ADD_PRICE_ROOM.toLocaleString()}원)` : "단일(+0원)"}`,
           nextUrl
         );
 
-        // ✅ 다음 페이지에서 '이전으로'로 돌아오면 리셋되도록 플래그는 "다음 페이지"가 세팅해야 함
-        // (여기서 세팅하면 새로고침/직접진입 때 꼬일 수 있음)
-        // => 대신 다음 페이지의 이전버튼에서 BACK_FLAG=1 세팅하고 돌아오게 하자.
-        // 아래 줄은 제거.
-        // localStorage.setItem(BACK_FLAG, "1");
-
+        // ✅ 이동
         setTimeout(() => {
           location.href = nextUrl;
         }, 60);
@@ -166,9 +164,8 @@
     });
 
     /**
-     * ✅ 이 페이지의 이전으로(한 단계 전)
-     * - 이 페이지 선택값은 취소
-     * - 금액도 base로 복원
+     * ✅ 이 페이지의 "이전으로"(한 단계 이전)
+     * - 선택 취소 + 가격 base로 원복
      */
     prevBtn.addEventListener("click", (e) => {
       e.preventDefault();
