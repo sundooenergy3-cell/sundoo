@@ -154,7 +154,18 @@
               <strong>배관 청소</strong>
               <span>
                 일반 100,000원<br>
-                상향
+                상향식 150,000원
+              </span>
+            </li>
+
+            <li class="highlight">
+              <strong>모델 추가</strong>
+              <span>
+                RUB6000 선택 시<br>
+                RC610 기준 +200,000원
+              </span>
+            </li>
+          </ul>
         </section>
       </main>
     </div>
@@ -204,7 +215,6 @@
       "33KF": 1120000,
       "38KF": 1170000,
 
-      // MF (두 가격표면 저장 키도 분리되어야 함: 예) 20MF-)
       "16MF": 760000,
       "20MF-": 810000,
       "25MF": 880000,
@@ -245,9 +255,32 @@
       localStorage.getItem("thermostat_type") ||
       localStorage.getItem("room_control_type");
 
-    const exhaustType =
-      localStorage.getItem("exhaust_type") ||
-      localStorage.getItem("shared_exhaust");
+    /* =========================
+       ✅ FF/FE(배기) 값 정규화 (핵심 수정)
+       - exhaust_type / shared_exhaust 가 어떤 값이어도(ff/fe/common/private/한글)
+         최종적으로 ff 또는 fe 로 정규화
+       - 그리고 exhaust_type에 다시 저장해서 다음부터 안 꼬이게 함
+    ========================= */
+    const rawExhaust1 = localStorage.getItem("exhaust_type");
+    const rawExhaust2 = localStorage.getItem("shared_exhaust");
+
+    // exhaust_type이 "빈문자열"이면 shared_exhaust로 fallback
+    const rawExhaust = (rawExhaust1 && String(rawExhaust1).trim() !== "")
+      ? rawExhaust1
+      : (rawExhaust2 || "");
+
+    const exhaustKey = String(rawExhaust).trim().toLowerCase();
+
+    let exhaustNorm = ""; // "ff" | "fe" | ""
+    // FF 쪽으로 인식할 값들
+    if (["ff", "private", "personal", "개인", "개별"].includes(exhaustKey)) exhaustNorm = "ff";
+    // FE 쪽으로 인식할 값들
+    if (["fe", "common", "shared", "공동"].includes(exhaustKey)) exhaustNorm = "fe";
+
+    // 정규화가 됐다면 exhaust_type에 통일 저장
+    if (exhaustNorm) {
+      localStorage.setItem("exhaust_type", exhaustNorm);
+    }
 
     // ✅ 용량: 저장값 그대로 사용 (가끔 미선택 문제 제거)
     const rawCap = (localStorage.getItem("boiler_capacity") || "").trim().toUpperCase();
@@ -273,8 +306,6 @@
 
     /* =========================
        ✅ 최종 추가금 "재계산"
-       - install_price에 의존하지 않음
-       - 화면 표시와 합산이 항상 일치
     ========================= */
     const thermoDelta =
       (thermostatType === "room" || thermostatType === "each") ? ADD_PRICE_THERMO_ROOM : 0;
@@ -299,15 +330,16 @@
     const tInstall = installType === "new" ? "신규" : installType === "replace" ? "교체" : "미선택";
 
     const tThermostat =
-      (thermostatType === "room" || thermostatType === "each")
-        ? `각방( 타사 제품 시 +${ADD_PRICE_THERMO_ROOM.toLocaleString()}원)`
-        : (thermostatType === "single" || thermostatType === "one")
-          ? "단일(+0)"
-          : "미선택";
+  (thermostatType === "room" || thermostatType === "each")
+    ? `각방( 타사 제품 시 +${ADD_PRICE_THERMO_ROOM.toLocaleString()}원)`
+    : (thermostatType === "single" || thermostatType === "one")
+      ? "단일(+0)"
+      : "미선택";
 
+    // ✅ 정규화된 ff/fe 기준으로만 표시
     const tExhaust =
-      exhaustType === "common" ? "공동(FE)" :
-      exhaustType === "private" ? "개인(FF)" :
+      exhaustNorm === "ff" ? "개인(FF)" :
+      exhaustNorm === "fe" ? "공동(FE)" :
       "미선택";
 
     const tHole =
@@ -431,5 +463,3 @@ ${history.slice().reverse().map(h => `- ${h.label}`).join("\n")}`.trim();
   </script>
 </body>
 </html>
-
-
