@@ -118,26 +118,24 @@
               </span>
             </li>
 
-            <li>
+            <li class="extra-cost">
               <strong>추가 비용 가능</strong>
-              <span>
-                연통 외부 미연결 · 연통 연장<br>
-                타사 각방온도조절기
+              <span class="extra-body">
+                <ul class="extra-list">
+                  <li>연통 외부 미연결 · 연통 연장</li>
+                  <li class="highlight">통신변환기 +50,000원</li>
+                  <li class="note">중앙룸콘 제외 / 귀뚜라미 일부 호환 불가</li>
+                  <li class="note">호환 불가 시 각방 전체 린나이 교체 시공</li>
+                </ul>
               </span>
             </li>
-
             <li class="foreign-boiler">
               <strong>타사 보일러</strong>
               <span class="foreign-body">
-                <span class="foreign-main">통신변환기 +50,000원</span>
-
-                <span class="foreign-note">
-                  중앙룸콘 제외 / 귀뚜라미 일부 호환 불가<br>
-                  호환 불가 시 각방 전체 린나이 교체 시공
-                </span>
-
                 <span class="foreign-fee">
-                  각방 시공비:<br> 2구 - 53만 · 3구 - 57만 · 4구 - 62만<br>5구 - 67만 · 6구 - 71만 · 7구 - 75만
+                  각방 시공비:<br>
+                  2구 - 53만 · 3구 - 57만 · 4구 - 62만<br>
+                  5구 - 67만 · 6구 - 71만 · 7구 - 75만
                 </span>
               </span>
             </li>
@@ -363,7 +361,7 @@
       `지역: ${tRegion}`,
       `가스타입: ${tGas}`,
       `설치타입: ${tInstall}`,
-      `공동배기구: ${tExhaust}`,
+      // `공동배기구: ${tExhaust}`,
       `설치용량: ${tCap}`,
       `온도조절: ${tThermostat}`,
       `배관구멍: ${tHole}`,
@@ -378,16 +376,15 @@
        복사용 텍스트
     ========================= */
     const copyText =
-`[상담 요약]
-- 지역: ${tRegion}
-- 가스타입: ${tGas}
-- 설치타입: ${tInstall}
-- 설치용량: ${tCap}
-- 온도조절: ${tThermostat}
-- 배관구멍: ${tHole}
-- 공동배기구: ${tExhaust}
-- 금액추가: ${condText}
-- 총 추가금:  ${fmtPlusWon(totalPriceCalc)}
+  `[상담 요약]
+  - 지역: ${tRegion}
+  - 가스타입: ${tGas}
+  - 설치타입: ${tInstall}
+  - 설치용량: ${tCap}
+  - 온도조절: ${tThermostat}
+  - 배관구멍: ${tHole}
+  - 금액추가: ${condText}
+  - 총 추가금:  ${fmtPlusWon(totalPriceCalc)}
 
 [선택 기록]
 ${history.slice().reverse().map(h => `- ${h.label}`).join("\n")}`.trim();
