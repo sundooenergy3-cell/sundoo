@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>전화상담도우미</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="css/installation_gas3.css" />
+  <link rel="stylesheet" href="css/installation_boiler7_2-1.css">
+
+  <script src="js/app.js" defer></script>
+
+  <style>
+    .button-wrap.grid-6{
+      display: grid;
+      grid-template-columns: repeat(4, 160px);
+      gap: 18px;
+      justify-content: center;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="page">
+    <aside class="history" aria-label="선택 기록">
+      <div class="history-head">
+        <h2 class="history-title">선택 기록</h2>
+        <button type="button" class="history-clear">지우기</button>
+      </div>
+
+      <ul class="history-list"></ul>
+      <p class="history-hint">이전 단계 선택이 저장됩니다.</p>
+    </aside>
+
+    <div class="container">
+      <header class="logo-area">
+        <a href="mobile.html">
+          <img src="img/logo.png" alt="SUNDOO" class="logo" />
+        </a>
+      </header>
+
+      <main class="content">
+        <h1 class="title" id="price">+0원</h1>
+
+        <div class="subtitle-row">
+          <p class="subtitle">평수에 맞는 용량을 선택해주세요.</p>
+          <button type="button" class="prev-btn" id="prevBtn">이전으로</button>
+        </div>
+
+        <!-- ✅ 8개 카드(4칸 그리드) -->
+        <div class="button-wrap grid-6">
+          <button class="type-btn" data-cap="15KF">
+            <span class="card-title">15KF</span>
+            <span class="card-sub">20평 미만</span>
+          </button>
+
+          <button class="type-btn" data-cap="18KF">
+            <span class="card-title">18KF</span>
+            <span class="card-sub">20~25평</span>
+          </button>
+
+          <button class="type-btn" data-cap="22KF">
+            <span class="card-title">22KF</span>
+            <span class="card-sub">26~37평</span>
+          </button>
+
+          <button class="type-btn" data-cap="27KF">
+            <span class="card-title">27KF</span>
+            <span class="card-sub">38~47평</span>
+          </button>
+
+          <button class="type-btn" data-cap="30KF">
+            <span class="card-title">30KF</span>
+            <span class="card-sub">48~57평</span>
+          </button>
+
+          <button class="type-btn" data-cap="33KF">
+            <span class="card-title">33KF</span>
+            <span class="card-sub">58~65평</span>
+          </button>
+
+          <button class="type-btn" data-cap="38KF">
+            <span class="card-title">38KF</span>
+            <span class="card-sub">65~75평</span>
+          </button>
+
+          <button class="type-btn" data-cap="none" aria-disabled="true">
+            <span class="card-title">-</span>
+            <span class="card-sub">&nbsp;</span>
+          </button>
+        </div>
+      </main>
+    </div>
+  </main>
+
+  <script>
+    const priceEl = document.getElementById("price");
+    const buttons = document.querySelectorAll(".type-btn");
+    const prevBtn = document.getElementById("prevBtn");
+
+    const PRICE_KEY = "install_price";
+    const CAP_KEY = "boiler_capacity";
+    const HISTORY_KEY = "sundoo_selection_history";
+
+    const BASE_BEFORE_KEY = "install_price_before_capacity";
+    const BACK_FLAG = "came_back_capacity";
+
+    // ✅ 용량별 추가금 (필요한 값으로 바꾸면 됨)
+    const ADD_PRICE = {
+      "15KF": 870000,
+      "18KF": 900000,
+      "22KF": 920000,
+      "27KF": 1000000,
+      "30KF": 1040000,
+      "33KF": 1120000,
+      "38KF": 1170000,
+    };
+
+    function toNum(v) {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function getPrice() {
+      return Math.max(0, toNum(localStorage.getItem(PRICE_KEY)));
+    }
+
+    function renderPriceOnly(v) {
+      const n = Math.max(0, toNum(v));
+      priceEl.textContent = `+${n.toLocaleString()}원`;
+    }
+
+    function setPrice(v) {
+      const n = Math.max(0, toNum(v));
+      localStorage.setItem(PRICE_KEY, String(n));
+      renderPriceOnly(n);
+    }
+
+    function pushHistory(label, url) {
+      try {
+        const arr = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+        const list = Array.isArray(arr) ? arr : [];
+        list.push({ label, url, ts: Date.now() });
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(-30)));
+      } catch {}
+    }
+
+    // ✅ init: 정상 진입 vs 돌아옴
+    (function init() {
+      const current = getPrice();
+
+      if (localStorage.getItem(BACK_FLAG) === "1") {
+        const base = Math.max(0, toNum(localStorage.getItem(BASE_BEFORE_KEY)));
+
+        localStorage.setItem(PRICE_KEY, String(base));
+        localStorage.removeItem(CAP_KEY);
+        localStorage.removeItem(BACK_FLAG);
+
+        renderPriceOnly(base);
+        buttons.forEach(b => b.classList.remove("active"));
+        return;
+      }
+
+      localStorage.setItem(BASE_BEFORE_KEY, String(current));
+      renderPriceOnly(current);
+      buttons.forEach(b => b.classList.remove("active"));
+    })();
+
+    // ✅ 카드 클릭
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const cap = btn.dataset.cap;
+
+        // '-' 카드 무시
+        if (!cap || cap === "none") return;
+
+        buttons.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        localStorage.setItem(CAP_KEY, cap);
+
+        const base = Math.max(0, toNum(localStorage.getItem(BASE_BEFORE_KEY)));
+        const add = Math.max(0, toNum(ADD_PRICE[cap] || 0));
+        const nextPrice = base + add;
+
+        setPrice(nextPrice);
+
+        const nextUrl = "installation_boiler10.html";
+        pushHistory(
+          `용량 선택: ${cap}${add ? `(+${add.toLocaleString()}원)` : "(+0원)"}`,
+          nextUrl
+        );
+
+        localStorage.setItem(BACK_FLAG, "1");
+        location.href = nextUrl;
+      });
+    });
+
+    // ✅ 이전으로
+    prevBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      location.href = "installation_boiler7.html";
+    });
+  </script>
+</body>
+</html>

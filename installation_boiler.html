@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>전화상담도우미</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="css/installation_boiler.css" />
+
+  <!-- ✅ 공용 기록 JS -->
+  <script src="js/app.js" defer></script>
+</head>
+
+<body>
+  <main class="page">
+    <!-- ✅ 선택 기록 패널 -->
+    <aside class="history" aria-label="선택 기록">
+      <div class="history-head">
+        <h2 class="history-title">선택 기록</h2>
+        <button type="button" class="history-clear">지우기</button>
+      </div>
+
+      <ul class="history-list"></ul>
+      <p class="history-hint">이전 단계 선택이 저장됩니다.</p>
+    </aside>
+
+    <div class="container">
+      <header class="logo-area">
+        <a href="mobile.html">
+          <img src="img/logo.png" alt="SUNDOO" class="logo" />
+        </a>
+      </header>
+
+      <main class="content">
+        <h1 class="title">전화 상담 도우미</h1>
+
+        <div class="subtitle-row">
+          <p class="subtitle">가스 타입을 선택해주세요.</p>
+          <button type="button" class="prev-btn" id="prevBtn">이전으로</button>
+        </div>
+
+        <div class="button-wrap">
+          <button class="type-btn active" type="button" data-gas="city">도시</button>
+          <button class="type-btn" type="button" data-gas="lpg">LPG</button>
+        </div>
+      </main>
+    </div>
+  </main>
+
+  <script>
+    const buttons = document.querySelectorAll(".type-btn");
+    const prevBtn = document.getElementById("prevBtn");
+
+    const STORAGE_KEY = "sundoo_selection_history";
+    const GAS_KEY = "gas_type";
+
+    function pushHistory(label, url) {
+      try {
+        const arr = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+        const list = Array.isArray(arr) ? arr : [];
+        list.push({ label, url, ts: Date.now() });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(list.slice(-30)));
+      } catch {}
+    }
+
+    // ✅ 이전 버튼: maps.html로 이동
+    prevBtn?.addEventListener("click", (e) => {
+      e.preventDefault();
+      location.href = "maps.html";
+    });
+
+    // ✅ 버튼 클릭: 선택 저장 + 히스토리 + 다음 페이지 이동(보일러 플로우)
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        buttons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        const gasType = btn.dataset.gas; // city / lpg
+        localStorage.setItem(GAS_KEY, gasType);
+
+        const nextUrl = "installation_boiler2.html";
+
+        pushHistory(
+          `가스 타입: ${gasType === "city" ? "도시가스" : "LPG"}`,
+          nextUrl
+        );
+
+        location.href = nextUrl;
+      });
+    });
+  </script>
+</body>
+</html>

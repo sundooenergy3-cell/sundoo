@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>전화상담도우미</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="css/installation_gas4.css" />
+
+  <!-- ✅ 공용 기록 JS -->
+  <script src="js/app.js" defer></script>
+</head>
+
+<body>
+  <main class="page">
+    <!-- ✅ 선택 기록 패널 -->
+    <aside class="history" aria-label="선택 기록">
+      <div class="history-head">
+        <h2 class="history-title">선택 기록</h2>
+        <button type="button" class="history-clear">지우기</button>
+      </div>
+
+      <ul class="history-list"></ul>
+      <p class="history-hint">이전 단계 선택이 저장됩니다.</p>
+    </aside>
+
+    <!-- 본문 -->
+    <div class="container">
+      <header class="logo-area">
+        <a href="mobile.html">
+          <img src="img/logo.png" alt="SUNDOO" class="logo" />
+        </a>
+      </header>
+
+      <main class="content">
+        <h1 class="title" id="price">+0원</h1>
+
+        <div class="subtitle-row">
+          <p class="subtitle">금액 변동 조건을 확인해주세요.</p>
+
+          <div class="hero__actions" aria-label="이전 다음 버튼">
+            <button type="button" class="nav-btn" id="prevBtn">이전으로</button>
+            <button type="button" class="nav-btn primary" id="nextBtn">다음으로</button>
+          </div>
+        </div>
+
+        <div class="button-wrap grid-6">
+          <button class="type-btn" data-cond="near">
+            근거리<br />
+            <span class="sub-text">(거리 30분 이하)</span>
+          </button>
+          <button class="type-btn" data-cond="chimney">연통</button>
+          <button class="type-btn" data-cond="none1">-</button>
+          <button class="type-btn" data-cond="none2">-</button>
+          <button class="type-btn" data-cond="none3">-</button>
+          <button class="type-btn" data-cond="none4">-</button>
+        </div>
+      </main>
+    </div>
+  </main>
+
+  <script>
+    const priceEl = document.getElementById("price");
+    const nextBtn = document.getElementById("nextBtn");
+    const prevBtn = document.getElementById("prevBtn");
+    const buttons = document.querySelectorAll(".type-btn");
+
+    const PRICE_KEY = "install_price";
+    const HISTORY_KEY = "sundoo_selection_history";
+
+    // ✅ 이 단계(조건선택) 진입 시점의 기준금액
+    const BASE_BEFORE_CONDITION_KEY = "install_price_before_condition";
+    // ✅ 이전 단계(배관구멍 등) 기준금액(존재할 수도 있음)
+    const BASE_BEFORE_HOLE_KEY = "install_price_before_hole";
+
+    // ✅ 히스토리 저장
+    function pushHistory(label, url) {
+      try {
+        const arr = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+        arr.push({ label, url, ts: Date.now() });
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(arr.slice(-30)));
+      } catch {}
+    }
+
+    // ✅ 최초 진입 시에만 기준금액 저장
+    if (localStorage.getItem(BASE_BEFORE_CONDITION_KEY) === null) {
+      const current = Number(localStorage.getItem(PRICE_KEY) || 0);
+      localStorage.setItem(BASE_BEFORE_CONDITION_KEY, String(current));
+    }
+
+    // ✅ 조건 선택 전 기준금액
+    const basePrice = Number(localStorage.getItem(BASE_BEFORE_CONDITION_KEY) || 0);
+
+    // ✅ 복수 선택 상태(근거리/연통)
+    const selected = new Set();
+    const DELTA = { near: -20000, chimney: 30000 };
+
+    // ✅ 저장된 조건 복원
+    try {
+      const saved = JSON.parse(localStorage.getItem("price_condition") || "[]");
+      saved.forEach(v => {
+        if (v === "near" || v === "chimney") selected.add(v);
+      });
+      buttons.forEach(btn => {
+        if (selected.has(btn.dataset.cond)) btn.classList.add("active");
+      });
+    } catch {}
+
+    function calcTotal() {
+      let total = basePrice;
+      for (const key of selected) total += (DELTA[key] || 0);
+      return Math.max(0, total);
+    }
+
+    function renderPrice({ log = false } = {}) {
+      const total = calcTotal();
+      priceEl.textContent = `+${total.toLocaleString()}원`;
+      localStorage.setItem(PRICE_KEY, String(total));
+      localStorage.setItem("price_condition", JSON.stringify([...selected]));
+
+      if (log) {
+        const labels = [];
+        if (selected.has("near")) labels.push("근거리(-20,000)");
+        if (selected.has("chimney")) labels.push("연통(+30,000)");
+        const text = labels.length ? labels.join(", ") : "선택 없음";
+        pushHistory(`금액 조건: ${text}`, "installation_boiler_condition.html");
+      }
+    }
+
+    // 초기 표시
+    renderPrice({ log: false });
+
+    // 조건 토글(near/chimney만)
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const cond = btn.dataset.cond;
+        if (!(cond in DELTA)) return;
+
+        if (selected.has(cond)) {
+          selected.delete(cond);
+          btn.classList.remove("active");
+        } else {
+          selected.add(cond);
+          btn.classList.add("active");
+        }
+
+        renderPrice({ log: true });
+      });
+    });
+
+    /**
+     * ✅ 이전으로
+     * - 이전 단계로 돌아갈 때:
+     *   1) "배관구멍 선택 전 금액"으로 복원
+     *   2) 조건 선택 취소 + (필요하면) hole_yn 취소
+     *   3) 이 단계 기준값 정리
+     */
+    prevBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+
+      const baseBeforeHole = Number(localStorage.getItem(BASE_BEFORE_HOLE_KEY) || 0);
+
+      localStorage.setItem(PRICE_KEY, String(baseBeforeHole));
+      localStorage.removeItem("price_condition");
+      localStorage.removeItem("hole_yn");
+
+      localStorage.removeItem(BASE_BEFORE_CONDITION_KEY);
+
+      location.href = "installation_boiler7.html";
+    });
+
+    /**
+     * ✅ 다음으로 (이전 카드 선택값에 따라 분기)
+     * - exhaust_type:
+     *   common  -> 단층(하향식)
+     *   private -> 그 외(상향식)
+     */
+    nextBtn.addEventListener("click", () => {
+      const total = Number(localStorage.getItem(PRICE_KEY) || 0);
+
+      const exhaustType = localStorage.getItem("exhaust_type"); // ⭐ 이전 카드 선택값
+      let nextUrl;
+
+      if (exhaustType === "common") {
+        // 단층(하향식)
+        nextUrl = "installation_boiler7_1-1.html";
+      } else if (exhaustType === "private") {
+        // 그 외(상향식)
+        nextUrl = "installation_boiler7_1-2.html";
+      } else {
+        alert("이전 단계에서 집 구조(단층/그 외) 선택이 필요합니다.");
+        return;
+      }
+
+      pushHistory(`다음으로 이동 (현재 +${total.toLocaleString()}원)`, nextUrl);
+      location.href = nextUrl;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>전화상담도우미</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="css/installation_gas3.css" />
+  <link rel="stylesheet" href="css/installation_boiler9.css">
+
+  <script src="js/app.js" defer></script>
+</head>
+
+<body>
+  <main class="page">
+    <aside class="history" aria-label="선택 기록">
+      <div class="history-head">
+        <h2 class="history-title">선택 기록</h2>
+        <button type="button" class="history-clear">지우기</button>
+      </div>
+
+      <ul class="history-list"></ul>
+      <p class="history-hint">이전 단계 선택이 저장됩니다.</p>
+    </aside>
+
+    <div class="container">
+      <header class="logo-area">
+        <a href="mobile.html">
+          <img src="img/logo.png" alt="SUNDOO" class="logo" />
+        </a>
+      </header>
+
+      <main class="content">
+        <h1 class="title" id="price">+0원</h1>
+
+        <div class="subtitle-row">
+          <p class="subtitle">평수에 맞는 용량을 선택해주세요.</p>
+          <button type="button" class="prev-btn" id="prevBtn">이전으로</button>
+        </div>
+
+        <div class="button-wrap">
+          <button class="type-btn" data-cap="13KE">
+            <span class="card-title">13KE</span>
+            <span class="card-sub">20평 미만</span>
+          </button>
+
+          <button class="type-btn" data-cap="16KE">
+            <span class="card-title">16KE</span>
+            <span class="card-sub">20~25평</span>
+          </button>
+
+          <button class="type-btn" data-cap="20KE">
+            <span class="card-title">20KE</span>
+            <span class="card-sub">26~37평</span>
+          </button>
+        </div>
+      </main>
+    </div>
+  </main>
+
+  <script>
+    const priceEl = document.getElementById("price");
+    const buttons = document.querySelectorAll(".type-btn");
+    const prevBtn = document.getElementById("prevBtn");
+
+    const PRICE_KEY = "install_price";
+    const CAP_KEY = "boiler_capacity";
+    const HISTORY_KEY = "sundoo_selection_history";
+
+    // ✅ "이 페이지에서 카드 클릭 후 다음 페이지로 갔다" 표시 (뒤로 돌아오면 원복용)
+    const APPLIED_FLAG = "capacity_applied_once";
+
+    // 용량별 금액
+    const ADD_PRICE = {
+      "13KE": 680000,
+      "16KE": 710000,
+      "20KE": 760000
+    };
+
+    const toNum = (v) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    };
+
+    function render(v) {
+      const n = Math.max(0, toNum(v));
+      priceEl.textContent = `+${n.toLocaleString()}원`;
+    }
+
+    function setPrice(v) {
+      const n = Math.max(0, toNum(v));
+      localStorage.setItem(PRICE_KEY, String(n));
+      render(n);
+    }
+
+    function pushHistory(label, url) {
+      try {
+        const arr = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+        arr.push({ label, url, ts: Date.now() });
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(arr.slice(-30)));
+      } catch {}
+    }
+
+    // ✅ 뒤로 왔을 때(특히 BFCache) 원복 처리
+    function rollbackIfReturned() {
+      const applied = sessionStorage.getItem(APPLIED_FLAG); // 세션 기준 (탭 닫으면 사라짐)
+      const savedCap = localStorage.getItem(CAP_KEY);
+
+      // applied가 아니면 아무 것도 하지 않음
+      if (applied !== "1") return;
+
+      const currentTotal = toNum(localStorage.getItem(PRICE_KEY));
+      const add = toNum(ADD_PRICE[savedCap] || 0);
+
+      // 카드 눌러서 더한 금액을 빼서 원복
+      const restored = Math.max(0, currentTotal - add);
+
+      // ✅ 가격 원복
+      localStorage.setItem(PRICE_KEY, String(restored));
+      render(restored);
+
+      // ✅ 카드 선택 해제
+      localStorage.removeItem(CAP_KEY);
+      buttons.forEach(b => b.classList.remove("active"));
+
+      // ✅ 플래그 해제(한 번만)
+      sessionStorage.removeItem(APPLIED_FLAG);
+    }
+
+    /**
+     * init: 항상 현재 저장된 가격을 표시
+     * (원복은 pageshow에서 처리)
+     */
+    (function init() {
+      const current = toNum(localStorage.getItem(PRICE_KEY));
+      render(current);
+
+      // (기본은 active 표시 안 함)
+      buttons.forEach(b => b.classList.remove("active"));
+    })();
+
+    /**
+     * ✅ pageshow: 뒤로가기/BFCache 복원 시에도 무조건 실행됨
+     * 여기서 원복시키면 "뒤로 왔을 때 금액이 그대로" 문제를 해결할 수 있음
+     */
+    window.addEventListener("pageshow", () => {
+      rollbackIfReturned();
+    });
+
+    /* 카드 클릭 */
+    buttons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        buttons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        const cap = btn.dataset.cap;
+        localStorage.setItem(CAP_KEY, cap);
+
+        const base = toNum(localStorage.getItem(PRICE_KEY)); // 이전 단계 값(예: 115000)
+        const add = toNum(ADD_PRICE[cap] || 0);
+        const nextPrice = base + add;
+
+        // ✅ 다음 페이지 갔다가 돌아오면 원복해야 하므로 플래그 저장
+        sessionStorage.setItem(APPLIED_FLAG, "1");
+
+        setPrice(nextPrice);
+
+        const nextUrl = "installation_boiler10.html";
+        pushHistory(`용량 선택: ${cap}(+${add.toLocaleString()}원)`, nextUrl);
+
+        location.href = nextUrl;
+      });
+    });
+
+    /* 이전(이전 단계로 이동) */
+    prevBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      location.href = "installation_boiler8-2.html";
+    });
+  </script>
+</body>
+</html>

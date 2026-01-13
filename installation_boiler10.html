@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>전화상담도우미</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="css/installation_boiler10.css">
+
+  <script src="js/app.js" defer></script>
+</head>
+
+<body>
+  <main class="page">
+    <aside class="history" aria-label="선택 기록">
+      <div class="history-head">
+        <h2 class="history-title">선택 기록</h2>
+        <button type="button" class="history-clear">지우기</button>
+      </div>
+      <ul class="history-list"></ul>
+      <p class="history-hint">이번 상담 선택 기록입니다.</p>
+    </aside>
+
+    <div class="container">
+      <header class="logo-area">
+        <a href="mobile.html">
+          <img src="img/logo.png" alt="SUNDOO" class="logo" />
+        </a>
+      </header>
+
+      <main class="content">
+        <h1 class="price" id="price">+0원</h1>
+
+        <div class="subtitle-wrap">
+          <p class="subtitle">기존 금액에 위 금액을 추가하여 안내해주세요.</p>
+          <button
+            type="button"
+            class="btn-prev"
+            onclick="history.back()"
+            aria-label="이전으로"
+            id="prevBtn"
+          >
+            이전으로
+          </button>
+        </div>
+
+        <section class="summary-slider" aria-label="최종 요약/사진 전환">
+          <div class="summary-track" id="summaryTrack">
+            <div class="summary-page">
+              <section class="summary" aria-label="최종 요약">
+                <h2 class="summary-title">최종 요약</h2>
+                <p class="summary-title2">- 보일러</p>
+                <ul class="summary-list" id="summaryList"></ul>
+
+                <div class="summary-actions">
+                  <button class="summary-btn primary" type="button" id="copySummaryBtn">요약 복사</button>
+                  <button class="summary-btn" type="button" id="resetAllBtn">전체 초기화</button>
+                </div>
+
+                <button type="button" class="summary-next" id="summaryNextBtn" aria-label="다음(사진 보기)">
+                  ➜
+                </button>
+              </section>
+            </div>
+
+            <div class="summary-page">
+              <section class="summary summary-photo" aria-label="사진">
+                <h2 class="summary-title">설치 용량</h2>
+
+                <div class="summary-image-wrap">
+                  <img src="img/background_1_1.png" alt="설치 사진" class="summary-image" />
+                </div>
+
+                <button type="button" class="summary-prev" id="summaryPrevBtn" aria-label="이전(요약 보기)">
+                  ← 요약으로
+                </button>
+              </section>
+            </div>
+          </div>
+        </section>
+
+        <hr class="divider" />
+
+        <section class="guide">
+          <h2 class="guide-title">보일러 설치 상담 안내</h2>
+
+          <ul class="guide-list two-line">
+            <li><strong>보일러 종류</strong><span>일반 / 콘덴싱 · 도시가스 / LPG · 하향식 / 상향식(복층·주택)</span></li>
+            <li><strong>설치 의무</strong><span>배수구 있는 환경 → 콘덴싱 보일러 필수 (정부 방침)</span></li>
+            <li><strong>문의 경로</strong><span>인터넷 문의 → 기준가 / 그 외 → 제품리스트 안내</span></li>
+            <li><strong>사전 확인</strong><span>기본 보일러 설치 공간 사진 필수</span></li>
+            <li><strong>추가 비용 가능</strong><span>연통 외부 미연결 · 연통 연장 · 타사 각방온도조절기</span></li>
+            <li><strong>타사 보일러</strong><span>통신변환기 +50,000원 ((<span>중앙룸콘 제외 / 귀뚜라미 호환불가</span>)</span></li>
+            <li><strong>계약서 필수</strong><span>가스 납부자 성함 · 제조명판 · 가스계량기 사진</span></li>
+            <li><strong>배관 청소</strong><span>일반 100,000원 / 상향식 150,000원</span></li>
+            <li class="highlight"><strong>모델 추가</strong><span>RUB6000 선택 시 RC610 기준 +200,000원</span></li>
+          </ul>
+        </section>
+      </main>
+    </div>
+  </main>
+
+  <script>
+    /* =========================
+       숫자 유틸 (문자 포함도 OK)
+    ========================= */
+    function toNumberSafe(v) {
+      if (v === null || v === undefined) return 0;
+      const cleaned = String(v).replace(/[^\d.-]/g, "");
+      if (!cleaned || cleaned === "-" || cleaned === ".") return 0;
+      const n = Number(cleaned);
+      return Number.isFinite(n) ? n : 0;
+    }
+    const clamp0 = (n) => Math.max(0, toNumberSafe(n));
+    const fmtPlusWon = (n) => `+${clamp0(n).toLocaleString()}원`;
+
+    /* =========================
+       고정 추가금
+    ========================= */
+    const ADD_PRICE_THERMO_ROOM = 50000;
+    const ADD_PRICE_HOLE_NO = 55000;
+
+    /* =========================
+       용량 가격표
+       - 저장된 boiler_capacity 값을 그대로 키로 사용
+    ========================= */
+    const CAP_PRICE = {
+      "13KE": 680000,
+      "16KE": 710000,
+      "20KE": 760000,
+
+      "13KF": 630000,
+      "16KF": 660000,
+      "20KF": 710000,
+      "25KF": 780000,
+      "30KF": 950000,
+      "36KF": 1000000,
+
+      "15KF": 870000,
+      "18KF": 900000,
+      "22KF": 920000,
+      "27KF": 1000000,
+      "30KF": 1040000,
+      "33KF": 1120000,
+      "38KF": 1170000,
+
+      // MF (두 가격표면 저장 키도 분리되어야 함: 예) 20MF-)
+      "16MF": 760000,
+      "20MF-": 810000,
+      "25MF": 880000,
+      "30MF-": 1050000,
+      "36MF": 1100000,
+
+      "18MF": 1000000,
+      "20MF": 1020000,
+      "22MF": 1100000,
+      "27MF": 1140000,
+      "30MF": 1220000,
+      "33MF": 1270000
+    };
+
+    /* =========================
+       선택 기록
+    ========================= */
+    const HISTORY_KEY = "sundoo_selection_history";
+    let history = [];
+    try {
+      history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+      if (!Array.isArray(history)) history = [];
+    } catch {}
+
+    /* =========================
+       값 읽기
+    ========================= */
+    const region =
+      localStorage.getItem("customer_region") ||
+      localStorage.getItem("customer_address") ||
+      localStorage.getItem("last_query") ||
+      "";
+
+    const gasType = localStorage.getItem("gas_type");
+    const installType = localStorage.getItem("install_type");
+
+    const thermostatType =
+      localStorage.getItem("thermostat_type") ||
+      localStorage.getItem("room_control_type");
+
+    const exhaustType =
+      localStorage.getItem("exhaust_type") ||
+      localStorage.getItem("shared_exhaust");
+
+    // ✅ 용량: 저장값 그대로 사용 (가끔 미선택 문제 제거)
+    const rawCap = (localStorage.getItem("boiler_capacity") || "").trim().toUpperCase();
+    const capPrice = clamp0(CAP_PRICE[rawCap] || 0);
+    const tCap = rawCap ? `${rawCap}(+${capPrice.toLocaleString()}원)` : "미선택";
+
+    // ✅ 배관구멍 정규화
+    const rawHole =
+      (localStorage.getItem("hole_yn") ||
+       localStorage.getItem("pipe_hole") ||
+       localStorage.getItem("piping_hole") ||
+       localStorage.getItem("hole") ||
+       "").toString().trim().toLowerCase();
+
+    let holeNorm = "";
+    if (["yes", "y", "true", "1", "있음", "유", "o"].includes(rawHole)) holeNorm = "yes";
+    if (["no", "n", "false", "0", "없음", "무", "x"].includes(rawHole)) holeNorm = "no";
+
+    // ✅ 조건(near/chimney)
+    let conditions = [];
+    try { conditions = JSON.parse(localStorage.getItem("price_condition") || "[]"); } catch {}
+    if (!Array.isArray(conditions)) conditions = [];
+
+    /* =========================
+       ✅ 최종 추가금 "재계산"
+       - install_price에 의존하지 않음
+       - 화면 표시와 합산이 항상 일치
+    ========================= */
+    const thermoDelta =
+      (thermostatType === "room" || thermostatType === "each") ? ADD_PRICE_THERMO_ROOM : 0;
+
+    const holeDelta =
+      (holeNorm === "no") ? ADD_PRICE_HOLE_NO : 0;
+
+    let condDelta = 0;
+    if (conditions.includes("near")) condDelta += -20000;
+    if (conditions.includes("chimney")) condDelta += 30000;
+
+    const totalPriceCalc = clamp0(capPrice + thermoDelta + holeDelta + condDelta);
+
+    // ✅ 상단 큰 금액
+    document.getElementById("price").textContent = fmtPlusWon(totalPriceCalc);
+
+    /* =========================
+       표시 텍스트들
+    ========================= */
+    const tRegion = region ? region : "미입력";
+    const tGas = gasType === "city" ? "도시가스" : gasType === "lpg" ? "LPG" : "미선택";
+    const tInstall = installType === "new" ? "신규" : installType === "replace" ? "교체" : "미선택";
+
+    const tThermostat =
+      (thermostatType === "room" || thermostatType === "each")
+        ? `각방(+${ADD_PRICE_THERMO_ROOM.toLocaleString()}원)`
+        : (thermostatType === "single" || thermostatType === "one")
+          ? "단일(+0)"
+          : "미선택";
+
+    const tExhaust =
+      exhaustType === "common" ? "공동(FE)" :
+      exhaustType === "private" ? "개인(FF)" :
+      "미선택";
+
+    const tHole =
+      holeNorm === "yes"
+        ? "있음(+0)"
+        : holeNorm === "no"
+          ? `없음(+${ADD_PRICE_HOLE_NO.toLocaleString()}원)`
+          : "미선택";
+
+    const condText = (() => {
+      const arr = [];
+      if (conditions.includes("near")) arr.push("근거리(-20,000)");
+      if (conditions.includes("chimney")) arr.push("연통(+30,000)");
+      return arr.length ? arr.join(", ") : "없음";
+    })();
+
+    /* =========================
+       요약 리스트
+    ========================= */
+    const summaryLines = [
+      `지역: ${tRegion}`,
+      `가스타입: ${tGas}`,
+      `설치타입: ${tInstall}`,
+      `공동배기구: ${tExhaust}`,
+      `설치용량: ${tCap}`,
+      `온도조절: ${tThermostat}`,
+      `배관구멍: ${tHole}`,
+      `금액추가: ${condText}`,
+      `총 추가금 : ${fmtPlusWon(totalPriceCalc)}`
+    ];
+
+    document.getElementById("summaryList").innerHTML =
+      summaryLines.map(line => `<li class="summary-item">• ${line}</li>`).join("");
+
+    /* =========================
+       복사용 텍스트
+    ========================= */
+    const copyText =
+`[상담 요약]
+- 지역: ${tRegion}
+- 가스타입: ${tGas}
+- 설치타입: ${tInstall}
+- 설치용량: ${tCap}
+- 온도조절: ${tThermostat}
+- 배관구멍: ${tHole}
+- 공동배기구: ${tExhaust}
+- 금액추가: ${condText}
+- 총 추가금:  ${fmtPlusWon(totalPriceCalc)}
+
+[선택 기록]
+${history.slice().reverse().map(h => `- ${h.label}`).join("\n")}`.trim();
+
+    document.getElementById("copySummaryBtn").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(copyText);
+        alert("요약이 복사되었습니다.");
+      } catch {
+        const ta = document.createElement("textarea");
+        ta.value = copyText;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        alert("요약이 복사되었습니다.");
+      }
+    });
+
+    /* =========================
+       전체 초기화
+    ========================= */
+    document.getElementById("resetAllBtn").addEventListener("click", () => {
+      [
+        "install_price",
+        "gas_type",
+        "install_type",
+        "thermostat_type",
+        "room_control_type",
+        "hole_yn",
+        "pipe_hole",
+        "piping_hole",
+        "hole",
+        "exhaust_type",
+        "shared_exhaust",
+        "price_condition",
+        "customer_region",
+        "customer_address",
+        "last_query",
+        "boiler_capacity",
+        "install_price_before_thermostat",
+        "install_price_before_hole",
+        "install_price_before_exhaust",
+        "came_back_thermostat",
+        "came_back_exhaust",
+        "install_price_before_capacity",
+        "came_back_capacity",
+        HISTORY_KEY
+      ].forEach(k => localStorage.removeItem(k));
+
+      alert("전체 기록/선택이 초기화되었습니다.");
+      location.href = "/mobile.html";
+    });
+
+    /* =========================
+       슬라이더
+    ========================= */
+    const track = document.getElementById("summaryTrack");
+    const nextBtn = document.getElementById("summaryNextBtn");
+    const summaryPrevBtn = document.getElementById("summaryPrevBtn");
+
+    let page = 0;
+    function renderSlide() { track.style.transform = `translateX(-${page * 50}%)`; }
+    nextBtn?.addEventListener("click", () => { page = 1; renderSlide(); });
+    summaryPrevBtn?.addEventListener("click", () => { page = 0; renderSlide(); });
+
+    const prevBtnTop = document.getElementById("prevBtn");
+    prevBtnTop?.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      window.history.back();
+    }, true);
+  </script>
+</body>
+</html>

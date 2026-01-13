@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>전화상담도우미</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="css/installation_gas3.css" />
+
+  <!-- ✅ 공용 기록 JS -->
+  <script src="js/app.js" defer></script>
+</head>
+
+<body>
+  <main class="page">
+    <aside class="history" aria-label="선택 기록">
+      <div class="history-head">
+        <h2 class="history-title">선택 기록</h2>
+        <button type="button" class="history-clear">지우기</button>
+      </div>
+
+      <ul class="history-list"></ul>
+      <p class="history-hint">이전 단계 선택이 저장됩니다.</p>
+    </aside>
+
+    <div class="container">
+      <header class="logo-area">
+        <a href="mobile.html">
+          <img src="img/logo.png" alt="SUNDOO" class="logo" />
+        </a>
+      </header>
+
+      <main class="content">
+        <h1 class="title" id="price">+0원</h1>
+
+        <div class="subtitle-row">
+          <p class="subtitle">배관이 나갈 구멍 유/무를 확인해주세요.</p>
+          <button type="button" class="prev-btn" id="prevBtn">이전으로</button>
+        </div>
+
+        <div class="button-wrap">
+          <button class="type-btn" data-hole="yes">있음</button>
+          <button class="type-btn" data-hole="no">없음</button>
+        </div>
+      </main>
+    </div>
+  </main>
+
+  <script>
+  const priceEl = document.getElementById("price");
+  const buttons = document.querySelectorAll(".type-btn");
+  const prevBtn = document.getElementById("prevBtn");
+
+  const PRICE_KEY = "install_price";
+  const HOLE_KEY = "hole_yn";
+  const HISTORY_KEY = "sundoo_selection_history";
+  const BASE_BEFORE_KEY = "install_price_before_hole";
+
+  const ADD_PRICE_NO_HOLE = 55000;
+
+  function toNum(v) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function getPrice() {
+    return Math.max(0, toNum(localStorage.getItem(PRICE_KEY)));
+  }
+
+  function render(v) {
+    priceEl.textContent = `+${v.toLocaleString()}원`;
+  }
+
+  function setPrice(v) {
+    const n = Math.max(0, toNum(v));
+    localStorage.setItem(PRICE_KEY, String(n));
+    render(n);
+  }
+
+  function pushHistory(label, url) {
+    try {
+      const arr = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+      arr.push({ label, url, ts: Date.now() });
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(arr.slice(-30)));
+    } catch {}
+  }
+
+  /**
+   * ✅ 핵심 init (무조건 base 재계산)
+   */
+  (function init() {
+    let current = getPrice();
+
+    // 🔥 이전에 '없음(+55,000)'이 적용된 상태면 원복
+    if (localStorage.getItem(HOLE_KEY) === "no") {
+      current = Math.max(0, current - ADD_PRICE_NO_HOLE);
+      localStorage.setItem(PRICE_KEY, String(current));
+    }
+
+    // ✅ base를 항상 다시 저장
+    localStorage.setItem(BASE_BEFORE_KEY, String(current));
+
+    // ✅ 선택 초기화
+    localStorage.removeItem(HOLE_KEY);
+
+    // 화면 표시
+    render(current);
+
+    // 버튼 active 초기화
+    buttons.forEach(b => b.classList.remove("active"));
+  })();
+
+  /**
+   * ✅ 카드 클릭 시
+   */
+  buttons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      buttons.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      const hole = btn.dataset.hole; // yes / no
+      localStorage.setItem(HOLE_KEY, hole);
+
+      const base = toNum(localStorage.getItem(BASE_BEFORE_KEY));
+      const nextPrice = hole === "no" ? base + ADD_PRICE_NO_HOLE : base;
+
+      setPrice(nextPrice);
+
+      const nextUrl = "installation_boiler5.html";
+      pushHistory(
+        `배관 구멍: ${hole === "yes" ? "있음(+0)" : "없음(+55,000)"}`,
+        nextUrl
+      );
+
+      location.href = nextUrl;
+    });
+  });
+
+  /**
+   * ✅ 이전으로
+   */
+  prevBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    location.href = "installation_boiler3.html";
+  });
+</script>
+
+</body>
+</html>

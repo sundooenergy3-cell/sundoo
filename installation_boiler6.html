@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>전화상담도우미</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="css/installation_gas3.css" />
+  <link rel="stylesheet" href="css/installation_boiler5.css" />
+
+  <script src="js/app.js" defer></script>
+</head>
+
+<body>
+  <main class="page">
+    <aside class="history" aria-label="선택 기록">
+      <div class="history-head">
+        <h2 class="history-title">선택 기록</h2>
+        <button type="button" class="history-clear">지우기</button>
+      </div>
+
+      <ul class="history-list"></ul>
+      <p class="history-hint">이전 단계 선택이 저장됩니다.</p>
+    </aside>
+
+    <div class="container">
+      <header class="logo-area">
+        <a href="mobile.html">
+          <img src="img/logo.png" alt="SUNDOO" class="logo" />
+        </a>
+      </header>
+
+      <main class="content">
+        <h1 class="title" id="price">+0원</h1>
+
+        <div class="subtitle-row">
+          <p class="subtitle">설치 공간에 배수구가 있는지 확인해주세요.</p>
+          <button type="button" class="prev-btn" id="prevBtn">이전으로</button>
+        </div>
+
+        <div class="button-wrap">
+          <!-- common = 배수구 있음(콘덴싱) -->
+          <button class="type-btn" data-exhaust="common">
+            <span class="card-title">있음</span>
+            <span class="card-sub">콘덴싱 보일러</span>
+          </button>
+
+          <!-- private = 배수구 없음(일반) -->
+          <button class="type-btn" data-exhaust="private">
+            <span class="card-title">없음</span>
+            <span class="card-sub">일반 보일러</span>
+          </button>
+        </div>
+      </main>
+    </div>
+  </main>
+
+  <script>
+    const priceEl = document.getElementById("price");
+    const buttons = document.querySelectorAll(".type-btn");
+    const prevBtn = document.getElementById("prevBtn");
+
+    const PRICE_KEY = "install_price";
+    const EXHAUST_KEY = "exhaust_type"; // common / private
+    const HISTORY_KEY = "sundoo_selection_history";
+
+    const BASE_BEFORE_KEY = "install_price_before_exhaust";
+    const BACK_FLAG = "came_back_exhaust"; // ✅ 다음 페이지 갔다가 돌아왔는지 표시
+
+    // ✅ 개인(FF)일 때 추가금 (없으면 0)
+    const ADD_PRICE_PRIVATE = 0;
+
+    function toNum(v) {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function getPrice() {
+      return Math.max(0, toNum(localStorage.getItem(PRICE_KEY)));
+    }
+
+    // ✅ 표시만 (저장 X)
+    function renderPriceOnly(v) {
+      const n = Math.max(0, toNum(v));
+      priceEl.textContent = `+${n.toLocaleString()}원`;
+    }
+
+    // ✅ 저장 + 표시
+    function setPrice(v) {
+      const n = Math.max(0, toNum(v));
+      localStorage.setItem(PRICE_KEY, String(n));
+      renderPriceOnly(n);
+    }
+
+    function pushHistory(label, url) {
+      try {
+        const arr = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+        const list = Array.isArray(arr) ? arr : [];
+        list.push({ label, url, ts: Date.now() });
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(-30)));
+      } catch {}
+    }
+
+    /**
+     * ✅ init
+     * - 정상 진입: 현재 가격을 base로 저장만 하고 가격 수정 X
+     * - 돌아옴: base로 가격 복원 + 선택 초기화
+     */
+    (function init() {
+      const current = getPrice();
+
+      if (localStorage.getItem(BACK_FLAG) === "1") {
+        // 🔙 다음 페이지에서 이전으로 돌아온 경우
+        const base = Math.max(0, toNum(localStorage.getItem(BASE_BEFORE_KEY)));
+
+        localStorage.setItem(PRICE_KEY, String(base)); // 가격 리셋
+        localStorage.removeItem(EXHAUST_KEY);          // 선택 리셋
+        localStorage.removeItem(BACK_FLAG);
+
+        renderPriceOnly(base);
+
+        // 버튼 active 초기화(선택 전)
+        buttons.forEach(b => b.classList.remove("active"));
+        return;
+      }
+
+      // ▶ 정상 진입(이전 시트에서 넘어옴): base를 현재 가격으로 저장
+      localStorage.setItem(BASE_BEFORE_KEY, String(current));
+
+      // 가격은 건드리지 않고 표시만
+      renderPriceOnly(current);
+
+      // 선택 전 상태로
+      buttons.forEach(b => b.classList.remove("active"));
+    })();
+
+    // ✅ 클릭 시: 공통/개인에 따라 금액 적용 + 이동 페이지 분기
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        buttons.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        const exhaust = btn.dataset.exhaust; // common / private
+        localStorage.setItem(EXHAUST_KEY, exhaust);
+
+        const base = Math.max(0, toNum(localStorage.getItem(BASE_BEFORE_KEY)));
+        const nextPrice = exhaust === "private" ? (base + ADD_PRICE_PRIVATE) : base;
+
+        // ✅ 클릭했을 때만 저장
+        setPrice(nextPrice);
+
+        const nextUrl =
+          exhaust === "common"
+            ? "installation_boiler7.html"
+            : "installation_boiler7-1.html";
+
+        // ✅ (텍스트만 수정) 배수구/보일러 타입으로 기록 남김
+        pushHistory(
+          `배수구: ${exhaust === "common" ? "있음(콘덴싱)" : "없음(일반)"}${exhaust === "private" && ADD_PRICE_PRIVATE ? `(+${ADD_PRICE_PRIVATE.toLocaleString()}원)` : ""}`,
+          nextUrl
+        );
+
+        // ✅ 다음 페이지 갔다가 돌아오면 리셋하기 위한 플래그
+        localStorage.setItem(BACK_FLAG, "1");
+
+        location.href = nextUrl;
+      });
+    });
+
+    prevBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      location.href = "installation_boiler5.html";
+    });
+  </script>
+</body>
+</html>

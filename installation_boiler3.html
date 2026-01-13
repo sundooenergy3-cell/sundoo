@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>전화상담도우미</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="css/installation_gas3.css" />
+
+  <script src="js/app.js" defer></script>
+</head>
+
+<body>
+  <main class="page">
+    <aside class="history" aria-label="선택 기록">
+      <div class="history-head">
+        <h2 class="history-title">선택 기록</h2>
+        <button type="button" class="history-clear">지우기</button>
+      </div>
+
+      <ul class="history-list"></ul>
+      <p class="history-hint">이전 단계 선택이 저장됩니다.</p>
+    </aside>
+
+    <div class="container">
+      <header class="logo-area">
+        <a href="mobile.html">
+          <img src="img/logo.png" alt="SUNDOO" class="logo" />
+        </a>
+      </header>
+
+      <main class="content">
+        <h1 class="title" id="price">+0원</h1>
+
+        <div class="subtitle-row">
+          <p class="subtitle">온도 조절기가 방마다 설치되어있는지 확인해주세요.</p>
+          <button type="button" class="prev-btn" id="prevBtn">이전으로</button>
+        </div>
+
+        <div class="button-wrap">
+          <button class="type-btn" data-thermo="room">각방</button>
+          <button class="type-btn" data-thermo="single">단일</button>
+        </div>
+      </main>
+    </div>
+  </main>
+
+  <script>
+    const priceEl = document.getElementById("price");
+    const buttons = document.querySelectorAll(".type-btn");
+    const prevBtn = document.getElementById("prevBtn");
+
+    const PRICE_KEY = "install_price";
+    const THERMO_KEY = "thermostat_type";
+
+    // ✅ 이 페이지 진입 시점의 기준금액(리셋용)
+    const BASE_KEY = "install_price_before_thermostat";
+
+    // ✅ 다음 페이지에서 "이전으로"로 돌아온 경우 리셋시키는 플래그
+    const BACK_FLAG = "came_back_thermostat";
+
+    const ADD_PRICE_ROOM = 50000;
+
+    // ✅ 히스토리
+    const HISTORY_KEY = "sundoo_selection_history";
+    function pushHistory(label, url) {
+      try {
+        const arr = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+        const list = Array.isArray(arr) ? arr : [];
+        list.push({ label, url, ts: Date.now() });
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(-30)));
+      } catch {}
+    }
+
+    // ✅ "+135,000원" / "135,000" / "135000" 모두 OK
+    function toNum(v) {
+      if (v == null) return 0;
+      const cleaned = String(v).replace(/[^\d.-]/g, "");
+      const n = Number(cleaned);
+      return Number.isFinite(n) ? n : 0;
+    }
+    const clamp0 = (n) => Math.max(0, toNum(n));
+
+    function render(v) {
+      const n = clamp0(v);
+      priceEl.textContent = `+${n.toLocaleString()}원`;
+    }
+
+    function setPrice(v) {
+      const n = clamp0(v);
+      localStorage.setItem(PRICE_KEY, String(n));
+      render(n);
+    }
+
+    // ✅ base 보장: 없으면 현재 install_price로 base 생성
+    function ensureBase() {
+      const saved = localStorage.getItem(BASE_KEY);
+      if (saved !== null && saved !== "") return clamp0(saved);
+
+      const current = clamp0(localStorage.getItem(PRICE_KEY));
+      localStorage.setItem(BASE_KEY, String(current));
+      return current;
+    }
+
+    /**
+     * ✅ init
+     * - 다음 페이지에서 이전으로 돌아오면(base로) 리셋
+     * - 정상 진입이면 base 저장 + 현재가 표시
+     */
+    (function init() {
+      // 돌아온 경우: base로 리셋 + 선택값 제거
+      if (localStorage.getItem(BACK_FLAG) === "1") {
+        const base = ensureBase();
+
+        localStorage.setItem(PRICE_KEY, String(base));
+        localStorage.removeItem(THERMO_KEY);
+        localStorage.removeItem(BACK_FLAG);
+
+        buttons.forEach(b => b.classList.remove("active"));
+        render(base);
+        return;
+      }
+
+      // 정상 진입: base 확보(저장) + 현재가 표시
+      const base = ensureBase();
+      render(clamp0(localStorage.getItem(PRICE_KEY)) || base);
+
+      buttons.forEach(b => b.classList.remove("active"));
+    })();
+
+    /**
+     * ✅ 카드 클릭: 금액 즉시 반영 → 다음페이지 이동
+     */
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        buttons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        const thermo = btn.dataset.thermo; // room | single
+        if (!thermo) return;
+
+        localStorage.setItem(THERMO_KEY, thermo);
+
+        const base = ensureBase();
+        const nextPrice = (thermo === "room") ? (base + ADD_PRICE_ROOM) : base;
+
+        // ✅ 즉시 반영
+        setPrice(nextPrice);
+
+        const nextUrl = "installation_boiler4.html";
+        pushHistory(
+          `온도조절: ${thermo === "room" ? `각방(+${ADD_PRICE_ROOM.toLocaleString()}원)` : "단일(+0원)"}`,
+          nextUrl
+        );
+
+        // ✅ 다음 페이지에서 '이전으로'로 돌아오면 리셋되도록 플래그는 "다음 페이지"가 세팅해야 함
+        // (여기서 세팅하면 새로고침/직접진입 때 꼬일 수 있음)
+        // => 대신 다음 페이지의 이전버튼에서 BACK_FLAG=1 세팅하고 돌아오게 하자.
+        // 아래 줄은 제거.
+        // localStorage.setItem(BACK_FLAG, "1");
+
+        setTimeout(() => {
+          location.href = nextUrl;
+        }, 60);
+      });
+    });
+
+    /**
+     * ✅ 이 페이지의 이전으로(한 단계 전)
+     * - 이 페이지 선택값은 취소
+     * - 금액도 base로 복원
+     */
+    prevBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+
+      const base = ensureBase();
+      localStorage.removeItem(THERMO_KEY);
+      localStorage.setItem(PRICE_KEY, String(base));
+      render(base);
+
+      location.href = "installation_boiler2.html";
+    });
+  </script>
+</body>
+</html>
