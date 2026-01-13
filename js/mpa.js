@@ -26,7 +26,16 @@ function isServiceAreaByAddressName(addressName) {
   // ✅ [이전으로] 버튼
   const prevBtn = document.getElementById("prevBtn");
 
-  // 폼이 없는 페이지면 종료 (안전)
+  // ✅ ✅ ✅ 핵심: form/input이 없어도 "이전으로"는 항상 동작하게 먼저 바인딩
+  if (prevBtn) {
+    prevBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      window.location.href = "mobile.html";
+    });
+  }
+
+  // 폼이 없는 페이지면 여기서 종료 (하지만 prevBtn은 이미 바인딩됨)
   if (!form || !input) return;
 
   // ✅ 타입 읽기 (index.html에서 maps.html?type=xxx 로 넘어옴)
@@ -55,7 +64,7 @@ function isServiceAreaByAddressName(addressName) {
     return NEXT_PAGE_BY_TYPE[type] || DEFAULT_NEXT_PAGE;
   }
 
-  // ✅ 비허용지역(서비스 외)일 때 이동할 HTML (여기만 바꾸면 됨!)
+  // ✅ 비허용지역(서비스 외)일 때 이동할 HTML
   const OUTSIDE_SERVICE_PAGE = "connection.html";
 
   // ✅ (선택) 다음으로 눌렀을 때 히스토리에 남기고 싶으면 true
@@ -111,18 +120,15 @@ function isServiceAreaByAddressName(addressName) {
       throw new Error("GEOCODE_NON_JSON_RESPONSE");
     }
 
-    // ✅ 카카오 API 에러 처리
     if (!res.ok) {
       const msg = data?.message || data?.error || "API error";
       throw new Error(`KAKAOMAP_ERROR: ${msg}`);
     }
 
-    // ✅ x/y를 '숫자'로 안전하게 검증
     const x = Number(data?.x);
     const y = Number(data?.y);
     if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
 
-    // ✅ label(=address_name) 말고도, 입력값(q)도 같이 들고 있어 판별에 활용 가능
     return {
       x,
       y,
@@ -157,25 +163,13 @@ function isServiceAreaByAddressName(addressName) {
     }
   }
 
-  // ✅ 히스토리에 남기는 헬퍼
   function pushHistory(label, url) {
     const STORAGE_KEY = "sundoo_selection_history";
     try {
       const arr = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
       arr.push({ label, url, ts: Date.now() });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(arr.slice(-30)));
-    } catch {
-      // localStorage 문제 있어도 동작은 계속
-    }
-  }
-
-  // ✅ [이전으로] 클릭
-  if (prevBtn) {
-    prevBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      window.location.href = "index2.html";
-    });
+    } catch {}
   }
 
   // ✅ [다음으로] 클릭 시 - 지도검색 안 하고 다음단계로 이동 (type별 분기)
@@ -200,9 +194,6 @@ function isServiceAreaByAddressName(addressName) {
     });
   }
 
-  // ✅ 검색(엔터/버튼) 시:
-  // - 허용지역: 네이버맵 새창 + 현재 페이지는 nextPage로 이동
-  // - 비허용지역: 네이버맵 X + 현재 페이지는 OUTSIDE_SERVICE_PAGE로 이동
   async function onSearch() {
     const q = normalize(input.value);
     if (!q) return alert("고객 주소(지역/주소)를 입력해주세요.");
@@ -212,10 +203,6 @@ function isServiceAreaByAddressName(addressName) {
 
     const nextPage = getNextPageByType(type);
 
-    // 🔧 변경: about:blank를 미리 열지 않음 (이게 핵심)
-    // const popup = window.open("about:blank", "_blank", "noopener,noreferrer");
-
-    // 회사 좌표 없으면 검색 시점에 다시 시도 + 이때만 안내
     if (!companyCoords) {
       await initCompany({ silent: false });
       if (!companyCoords) return;
@@ -224,10 +211,8 @@ function isServiceAreaByAddressName(addressName) {
     setBusy(true);
     try {
       const customer = await geocode(q);
-
       const areaText = (customer?.label || "") + " " + (customer?.raw || "");
 
-      // ✅ 비허용지역(또는 지오코딩 실패): 네이버맵 안띄움 + OUTSIDE_SERVICE_PAGE로 이동
       if (!customer || !isServiceAreaByAddressName(areaText)) {
         const outUrl =
           `${OUTSIDE_SERVICE_PAGE}?q=${encodeURIComponent(q)}&type=${encodeURIComponent(type)}&inService=0`;
@@ -237,22 +222,18 @@ function isServiceAreaByAddressName(addressName) {
         return;
       }
 
-      // ✅ 허용지역: 네이버 길찾기 열기 + nextPage로 이동
       const naverUrl = buildDirectionsUrl(
         { x: companyCoords.x, y: companyCoords.y, name: companyCoords.name },
         { x: customer.x, y: customer.y, name: customer.label }
       );
 
-      // 🔧 변경: 최종 URL이 만들어진 다음에 "직접" 새창 오픈
       window.open(naverUrl, "_blank");
-
       pushHistory(`지역(서비스내): ${q}`, naverUrl);
 
       const nextUrl =
         `${nextPage}?q=${encodeURIComponent(q)}&type=${encodeURIComponent(type)}&inService=1`;
 
       pushHistory(`다음단계 이동: ${q}`, nextUrl);
-
       location.href = nextUrl;
       return;
 
@@ -276,6 +257,5 @@ function isServiceAreaByAddressName(addressName) {
     }
   });
 
-  // ✅ 페이지 로드시 회사 좌표 선계산 (로드 시엔 팝업 띄우지 않음)
   initCompany({ silent: true });
 })();
