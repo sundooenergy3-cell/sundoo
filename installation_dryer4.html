@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>전화상담도우미 - 건조기</title>
+
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"
+  />
+  <link rel="stylesheet" href="css/installation_gas4.css" />
+
+  <script src="js/app.js" defer></script>
+</head>
+
+<body>
+  <main class="page">
+    <aside class="history" aria-label="선택 기록">
+      <div class="history-head">
+        <h2 class="history-title">선택 기록</h2>
+        <button type="button" class="history-clear">지우기</button>
+      </div>
+      <ul class="history-list"></ul>
+      <p class="history-hint">이전 단계 선택이 저장됩니다.</p>
+    </aside>
+
+    <div class="container">
+      <header class="logo-area">
+        <a href="mobile.html">
+          <img src="img/logo.png" alt="SUNDOO" class="logo" />
+        </a>
+      </header>
+
+      <main class="content">
+        <h1 class="title" id="price">+0원</h1>
+
+        <div class="subtitle-row">
+          <p class="subtitle">금액 변동 조건을 확인해주세요.</p>
+
+          <div class="hero__actions">
+            <button type="button" class="nav-btn" id="prevBtn">이전으로</button>
+            <button type="button" class="nav-btn primary" id="nextBtn">다음으로</button>
+          </div>
+        </div>
+
+        <div class="button-wrap grid-6">
+          <button class="type-btn" id="chimneyBtn">연통</button>
+          <button class="type-btn" disabled>-</button>
+          <button class="type-btn" disabled>-</button>
+          <button class="type-btn" disabled>-</button>
+          <button class="type-btn" disabled>-</button>
+          <button class="type-btn" disabled>-</button>
+        </div>
+      </main>
+    </div>
+  </main>
+
+  <script>
+    const priceEl = document.getElementById("price");
+    const chimneyBtn = document.getElementById("chimneyBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const prevBtn = document.getElementById("prevBtn");
+
+    const PRICE_KEY = "install_price";
+    const HISTORY_KEY = "sundoo_selection_history";
+
+    const PRODUCT_EXTRA_KEY = "dryer_product_extra";
+    const HOLE_EXTRA_KEY = "dryer_hole_extra";
+    const CHIMNEY_EXTRA_KEY = "dryer_chimney_extra";
+
+    const CONDITION_KEY = "dryer_condition"; // ["chimney"] 형태
+    const CHIMNEY_EXTRA = 30000;
+
+    function toNum(v) {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function renderPrice(v) {
+      priceEl.textContent = `+${Math.max(0, v).toLocaleString()}원`;
+    }
+
+    function calcTotal() {
+      const product = toNum(localStorage.getItem(PRODUCT_EXTRA_KEY));
+      const hole = toNum(localStorage.getItem(HOLE_EXTRA_KEY));
+      const chimney = toNum(localStorage.getItem(CHIMNEY_EXTRA_KEY));
+      return Math.max(0, product + hole + chimney);
+    }
+
+    function setTotal(v) {
+      const n = Math.max(0, toNum(v));
+      localStorage.setItem(PRICE_KEY, String(n));
+      renderPrice(n);
+    }
+
+    function pushHistory(label, url) {
+      try {
+        const arr = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+        arr.push({ label, url, ts: Date.now() });
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(arr.slice(-30)));
+      } catch {}
+    }
+
+    function clearCond() {
+      localStorage.setItem(CONDITION_KEY, JSON.stringify([]));
+    }
+
+    function setCondOn() {
+      localStorage.setItem(CONDITION_KEY, JSON.stringify(["chimney"]));
+    }
+
+    /* ✅ 핵심: 이 페이지 들어오면
+       - 이 페이지에서 더해졌던(chimney_extra) 금액이 있으면 빼서 base로 복원
+       - 연통 선택/extra를 초기화(=미선택 상태)
+    */
+    let base = 0;
+    let selected = false;
+
+    (function init() {
+      const currentTotal = calcTotal();
+      const prevExtra = toNum(localStorage.getItem(CHIMNEY_EXTRA_KEY)); // 0 or 30000
+
+      base = Math.max(0, currentTotal - prevExtra);
+
+      // 미선택 상태로 초기화
+      clearCond();
+      localStorage.setItem(CHIMNEY_EXTRA_KEY, "0");
+
+      selected = false;
+      chimneyBtn.classList.remove("active");
+
+      // 화면/저장 금액은 base
+      setTotal(base);
+    })();
+
+    chimneyBtn.addEventListener("click", () => {
+      selected = !selected;
+      chimneyBtn.classList.toggle("active", selected);
+
+      if (selected) {
+        setCondOn();
+        localStorage.setItem(CHIMNEY_EXTRA_KEY, String(CHIMNEY_EXTRA));
+        setTotal(base + CHIMNEY_EXTRA);
+      } else {
+        clearCond();
+        localStorage.setItem(CHIMNEY_EXTRA_KEY, "0");
+        setTotal(base);
+      }
+    });
+
+    nextBtn.addEventListener("click", () => {
+      const total = selected ? (base + CHIMNEY_EXTRA) : base;
+      setTotal(total);
+
+      const text = selected ? "연통(+30,000원)" : "선택 없음";
+      const nextUrl = "installation_dryer5.html";
+      pushHistory(`건조기 설치 조건: ${text}`, nextUrl);
+
+      location.href = nextUrl;
+    });
+
+    prevBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      // 이전으로는 “선택 전(base)” 금액이어야 함
+      setTotal(base);
+      clearCond();
+      localStorage.setItem(CHIMNEY_EXTRA_KEY, "0");
+      location.href = "installation_dryer3.html";
+    });
+  </script>
+</body>
+</html>

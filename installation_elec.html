@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>전화상담도우미 - 전기온수기</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="css/installation_boiler2.css">
+
+  <!-- ✅ 공용 기록 JS -->
+  <script src="js/app.js" defer></script>
+</head>
+
+<body>
+  <main class="page">
+    <!-- ✅ 선택 기록 패널 -->
+    <aside class="history" aria-label="선택 기록">
+      <div class="history-head">
+        <h2 class="history-title">선택 기록</h2>
+        <button type="button" class="history-clear">지우기</button>
+      </div>
+
+      <ul class="history-list"></ul>
+      <p class="history-hint">이전 단계 선택이 저장됩니다.</p>
+    </aside>
+
+    <!-- 기존 화면 -->
+    <div class="container">
+      <header class="logo-area">
+        <a href="mobile.html">
+          <img src="img/logo.png" alt="SUNDOO" class="logo">
+        </a>
+      </header>
+
+      <main class="content">
+        <h1 class="title" id="price">+0원</h1>
+
+        <div class="subtitle-row">
+          <p class="subtitle">전기온수기 설치 타입을 선택해주세요.</p>
+          <button type="button" class="prev-btn" id="prevBtn">이전으로</button>
+        </div>
+
+        <div class="button-wrap">
+          <button class="type-btn active" data-type="new">신규</button>
+          <button class="type-btn" data-type="replace">교체</button>
+        </div>
+      </main>
+    </div>
+  </main>
+
+  <script>
+    const priceEl = document.getElementById("price");
+    const buttons = document.querySelectorAll(".type-btn");
+    const prevBtn = document.getElementById("prevBtn");
+
+    // ✅ 이 페이지 진입 시 화면만 0원으로 보여주기
+    // ⚠️ install_price를 여기서 0으로 강제 저장하면, 다음 페이지에서 0으로 보일 수 있음
+    priceEl.textContent = "+0원";
+
+    function setPrice(newPrice) {
+      localStorage.setItem("install_price", String(newPrice));
+      priceEl.textContent = `+${Number(newPrice).toLocaleString()}원`;
+    }
+
+    // ✅ (선택) app.js와 같은 키로 선택 기록에 추가
+    function pushHistory(label, url) {
+      const STORAGE_KEY = "sundoo_selection_history";
+      try {
+        const history = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        history.push({ label, url, ts: Date.now() });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(-30)));
+      } catch {}
+    }
+
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        buttons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        const type = btn.dataset.type; // new / replace
+
+        // ✅ 신규는 +50,000원 / 교체는 +0원
+        const price = (type === "new") ? 50000 : 0;
+
+        // ✅ 선택값 저장
+        localStorage.setItem("install_type", type);
+        setPrice(price);
+
+        // ✅ 다음 페이지
+        const nextUrl = "installation_elec2.html";
+
+        // ✅ 선택 기록에 실제 금액 표시
+        pushHistory(
+          `전기온수기 설치 타입: ${type === "new" ? "신규" : "교체"}(+${price.toLocaleString()}원)`,
+          nextUrl
+        );
+
+        location.href = nextUrl;
+      });
+    });
+
+    // ✅ 이전 버튼
+    prevBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      location.href = "maps.html";
+    });
+  </script>
+</body>
+</html>

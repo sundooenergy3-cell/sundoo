@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>전화상담도우미 - 전기온수기</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="css/installation_boiler2.css">
+
+  <script src="js/app.js" defer></script>
+</head>
+
+<body>
+  <main class="page">
+    <aside class="history" aria-label="선택 기록">
+      <div class="history-head">
+        <h2 class="history-title">선택 기록</h2>
+        <button type="button" class="history-clear">지우기</button>
+      </div>
+
+      <ul class="history-list"></ul>
+      <p class="history-hint">이전 단계 선택이 저장됩니다.</p>
+    </aside>
+
+    <div class="container">
+      <header class="logo-area">
+        <a href="mobile.html">
+          <img src="img/logo.png" alt="SUNDOO" class="logo">
+        </a>
+      </header>
+
+      <main class="content">
+        <h1 class="title" id="price">+0원</h1>
+
+        <div class="subtitle-row">
+          <p class="subtitle">급수/온수 배관이 있는지 확인해주세요.</p>
+          <button type="button" class="prev-btn" id="prevBtn">이전으로</button>
+        </div>
+
+        <div class="button-wrap">
+          <!-- 의미에 맞게 data-type 변경 -->
+          <button class="type-btn active" data-plumbing="yes">있음</button>
+          <button class="type-btn" data-plumbing="no">
+            <span class="card-title">없음</span>
+            <span class="card-sub">T자 부속 사용</span>
+          </button>
+        </div>
+      </main>
+    </div>
+  </main>
+
+  <script>
+    const priceEl = document.getElementById("price");
+    const buttons = document.querySelectorAll(".type-btn");
+    const prevBtn = document.getElementById("prevBtn");
+
+    // ✅ 이전 페이지에서 저장된 가격을 그대로 표시 (절대 0으로 초기화 금지)
+    const basePrice = Number(localStorage.getItem("install_price") || 0);
+    priceEl.textContent = `+${basePrice.toLocaleString()}원`;
+
+    function setPrice(newPrice) {
+      localStorage.setItem("install_price", String(newPrice));
+      priceEl.textContent = `+${Number(newPrice).toLocaleString()}원`;
+    }
+
+    function pushHistory(label, url) {
+      const STORAGE_KEY = "sundoo_selection_history";
+      try {
+        const history = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        history.push({ label, url, ts: Date.now() });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(-30)));
+      } catch {}
+    }
+
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        buttons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        const plumbing = btn.dataset.plumbing; // yes / no
+
+        // ✅ 옵션 추가금 (필요하면 숫자만 바꿔)
+        const extra = (plumbing === "no") ? 0 : 0;
+
+        // ✅ 누적 금액 = 기존 금액 + 옵션 추가금
+        const total = basePrice + extra;
+
+        // ✅ 배관 선택 저장 (키 이름은 원하는대로)
+        localStorage.setItem("plumbing", plumbing);
+
+        // ✅ 누적 금액 저장/표시
+        setPrice(total);
+
+        const nextUrl = "installation_elec3.html";
+
+        pushHistory(
+          `배관: ${plumbing === "yes" ? "있음(+0원)" : "없음(T자 부속 )(+0원)"}`,
+          nextUrl
+        );
+
+        location.href = nextUrl;
+      });
+    });
+
+    prevBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      location.href = "installation_elec.html";
+    });
+  </script>
+</body>
+</html>

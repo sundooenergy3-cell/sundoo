@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>전화상담도우미 - 건조기 최종요약</title>
+
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"
+  />
+  <link rel="stylesheet" href="css/installation_gas6.css" />
+  <link rel="stylesheet" href="css/installation_dryer5.css" />
+
+  <script src="js/app.js" defer></script>
+</head>
+
+<body>
+  <main class="page">
+    <aside class="history" aria-label="선택 기록">
+      <div class="history-head">
+        <h2 class="history-title">선택 기록</h2>
+        <button type="button" class="history-clear">지우기</button>
+      </div>
+      <ul class="history-list"></ul>
+      <p class="history-hint">이번 상담 선택 기록입니다.</p>
+    </aside>
+
+    <div class="container">
+      <header class="logo-area">
+        <a href="mobile.html">
+          <img src="img/logo.png" alt="SUNDOO" class="logo" />
+        </a>
+      </header>
+
+      <main class="content">
+        <h1 class="price" id="price">+0원</h1>
+
+        <div class="subtitle-wrap">
+          <p class="subtitle">기존 금액에 위 금액을 추가하여 안내해주세요.</p>
+          <button type="button" class="btn-prev" id="prevBtn">이전으로</button>
+        </div>
+
+        <section class="summary" aria-label="최종 요약">
+          <h2 class="summary-title">최종 요약</h2>
+          <p class="summary-title2">- 건조기</p>
+
+          <ul class="summary-list" id="summaryList"></ul>
+
+          <div class="summary-actions">
+            <button class="summary-btn primary" type="button" id="copySummaryBtn">요약 복사</button>
+            <button class="summary-btn" type="button" id="resetAllBtn">전체 초기화</button>
+          </div>
+        </section>
+
+        <hr class="divider" />
+
+        <section class="dryer-info" aria-label="건조기 설치 안내">
+          <h2 class="dryer-info__title">건조기 설치 안내</h2>
+          <p class="dryer-info__desc">상담 시 아래 내용을 기준으로 고객에게 안내해주세요.</p>
+
+          <div class="dryer-card">
+            <div class="dryer-card__head">
+              <h3 class="dryer-card__title">설치 비용 안내</h3>
+              <span class="dryer-badge">카드 결제 기준</span>
+            </div>
+
+            <ul class="dryer-list">
+              <li>
+                • <strong>기존 제품 이전 설치</strong> : <strong>180,000원</strong>
+                <span class="muted">(선입금 필수)</span>
+              </li>
+              <li>
+                • <strong>제품 온라인 구매 후 설치</strong> : <strong>100,000원</strong>
+              </li>
+            </ul>
+          </div>
+
+          <div class="dryer-grid">
+            <div class="dryer-card">
+              <h3 class="dryer-card__title">신규 설치 시 확인 사항</h3>
+              <ul class="dryer-list">
+                <li>• 설치 공간 전체 사진 요청</li>
+                <li>• 창문 / 배기 위치 확인</li>
+                <li>• 가스 계량기 또는 수도 근처 여부 확인</li>
+                <li>• 콘센트 및 전원 위치 확인</li>
+              </ul>
+            </div>
+
+            <div class="dryer-card">
+              <h3 class="dryer-card__title">추가 확인 사항</h3>
+              <ul class="dryer-list">
+                <li>• 가스 타입 확인 (도시가스(LNG) / LPG)</li>
+                <li>• 기존 제품 수거 여부 안내</li>
+                <li>• 연통 필요 여부 및 설치 가능 공간 확인</li>
+                <li>• 현장 상황에 따라 추가 비용 발생 가능</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="dryer-foot">
+            <strong>요약</strong>
+            <span>이전설치 18만 / 제품구매 후 설치 10만 · 가스타입 필수 확인</span>
+          </div>
+        </section>
+      </main>
+    </div>
+  </main>
+
+  <script>
+    const PRICE_KEY = "install_price";
+
+    function toNumberSafe(v) {
+      if (v === null || v === undefined) return 0;
+      const cleaned = String(v).replace(/[^\d-]/g, "");
+      const n = Number(cleaned);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function fmtPlusWon(n) {
+      return `+${Math.max(0, n).toLocaleString()}원`;
+    }
+
+    function getJSON(key, fallback) {
+      try {
+        const v = JSON.parse(localStorage.getItem(key) || "null");
+        return v === null ? fallback : v;
+      } catch {
+        return fallback;
+      }
+    }
+
+    /* 1) 누적 추가금 표시 */
+    const totalPrice = toNumberSafe(localStorage.getItem(PRICE_KEY));
+    document.getElementById("price").textContent = fmtPlusWon(totalPrice);
+
+    /* 2) 선택값 읽기 (키 통일 완료) */
+    const gasType = localStorage.getItem("gas_type");
+    const gasText =
+      gasType === "lng" ? "LNG" :
+      gasType === "lpg" ? "LPG" :
+      "확인 필요";
+
+    const dryerProduct = localStorage.getItem("dryer_product");
+    let productText = "확인 필요";
+    if (dryerProduct === "buy") productText = "구매";
+    else if (dryerProduct === "have") productText = "보유중";
+
+    const costText =
+      productText === "구매" ? "제품 온라인 구매 후 설치 (100,000원)" :
+      productText === "보유중" ? "기존 제품 이전설치 (180,000원)" :
+      "확인 필요";
+
+    const cond = getJSON("dryer_condition", []);
+    const hasChimney = Array.isArray(cond) && cond.includes("chimney");
+    const chimneyText = hasChimney ? "연통(+30,000원)" : "없음";
+
+    const holeYn = localStorage.getItem("hole_yn");
+    const holeText =
+      holeYn === "yes" ? "있음" :
+      holeYn === "no" ? "없음(+55,000원)" :
+      "확인 필요";
+
+    const pickupText = "현장 확인 후 진행";
+
+    /* 3) 요약 렌더 */
+    const summaryLines = [
+      `총 추가금: ${fmtPlusWon(totalPrice)}`,
+      `설치 비용 기준: ${costText}`,
+      `제품 확인: ${productText}`,
+      `가스 타입: ${gasText}`,
+      `금액 변동: ${chimneyText}`,
+      `배관 구멍: ${holeText}`,
+      `기존 제품 수거: ${pickupText}`,
+    ];
+
+    const summaryListEl = document.getElementById("summaryList");
+    summaryListEl.innerHTML = summaryLines
+      .map((line) => `<li class="summary-item">• ${line}</li>`)
+      .join("");
+
+    /* 4) 복사 / 초기화 / 이전 */
+    const copyText =
+`[상담 요약]
+- 제품: 건조기
+${summaryLines.map(v => `- ${v}`).join("\n")}`.trim();
+
+    document.getElementById("copySummaryBtn").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(copyText);
+        alert("요약이 복사되었습니다.");
+      } catch {
+        const ta = document.createElement("textarea");
+        ta.value = copyText;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        alert("요약이 복사되었습니다.");
+      }
+    });
+
+    document.getElementById("resetAllBtn").addEventListener("click", () => {
+      localStorage.clear();
+      alert("전체 기록이 초기화되었습니다.");
+      location.href = "mobile.html";
+    });
+
+    document.getElementById("prevBtn").addEventListener("click", () => {
+      location.href = "installation_dryer4.html";
+    });
+  </script>
+</body>
+</html>

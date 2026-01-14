@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>전화상담도우미</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="css/installation_gas6.css" />
+
+  <!-- ✅ 공용 기록 렌더 -->
+  <script src="js/app.js" defer></script>
+
+  <style>
+    .summary {
+         height: 360px;  
+         margin-bottom: 4rem;
+    }
+    li { list-style: none;}
+  </style>
+</head>
+
+<body>
+  <main class="page">
+    <!-- ✅ 왼쪽 선택 기록 패널 -->
+    <aside class="history" aria-label="선택 기록">
+      <div class="history-head">
+        <h2 class="history-title">선택 기록</h2>
+        <button type="button" class="history-clear">지우기</button>
+      </div>
+      <ul class="history-list"></ul>
+      <p class="history-hint">이번 상담 선택 기록입니다.</p>
+    </aside>
+
+    <!-- 본문 -->
+    <div class="container">
+      <header class="logo-area">
+        <a href="mobile.html">
+          <img src="img/logo.png" alt="SUNDOO" class="logo" />
+        </a>
+      </header>
+
+      <main class="content">
+        <h1 class="price" id="price">+0원</h1>
+
+        <div class="subtitle-wrap">
+          <p class="subtitle">기존 금액에 위 금액을 추가하여 안내해주세요.</p>
+          <button type="button" class="btn-prev" aria-label="이전으로" id="prevBtn">
+            이전으로
+          </button>
+        </div>
+
+        <!-- ✅ 최종 요약 -->
+        <section class="summary" aria-label="최종 요약">
+          <h2 class="summary-title">최종 요약</h2>
+          <p class="summary-title2">- 전기온수기</p>
+          <ul class="summary-list" id="summaryList"></ul>
+
+          <div class="summary-actions">
+            <button class="summary-btn primary" type="button" id="copySummaryBtn">요약 복사</button>
+            <button class="summary-btn" type="button" id="resetAllBtn">전체 초기화</button>
+          </div>
+        </section>
+
+        <hr class="divider" />
+        
+        <!-- 전기온수기 요금·용량 요약 -->
+        <section class="elec-info" aria-label="전기온수기 요금 용량 요약">
+          <h2 class="elec-info__title">전기온수기 요금 · 용량 안내</h2>
+          <p class="elec-info__desc">
+            온라인 구매 기준 시공비이며 카드 결제 기준입니다.
+            (세금계산서 발행 시 별도)
+          </p>
+
+          <!-- 시공비 표 -->
+          <div class="elec-card">
+            <div class="elec-card__head">
+              <h3 class="elec-card__title">시공비 안내</h3>
+              <span class="elec-badge">단위 : 원</span>
+            </div>
+
+            <div class="elec-table-wrap">
+              <table class="elec-table">
+                <thead>
+                  <tr>
+                    <th>구분</th>
+                    <th>~50L</th>
+                    <th>80L</th>
+                    <th>100L</th>
+                    <th>200L<br /><span class="muted">(폐가전 수거)</span></th>
+                    <th>300L~<br /><span class="muted">(폐가전 수거 X)</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th>기본 <span class="muted">(감압밸브 별도)</span></th>
+                    <td>144,000</td>
+                    <td>190,000</td>
+                    <td>220,000</td>
+                    <td>250,000</td>
+                    <td>250,000</td>
+                  </tr>
+                  <tr>
+                    <th>신규 <span class="muted">(감압밸브 포함)</span></th>
+                    <td>199,000</td>
+                    <td>245,000</td>
+                    <td>275,000</td>
+                    <td>314,000</td>
+                    <td>314,000</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <p class="elec-note">
+              ⚠️ 200L 이상은 차단기 직결 가능 여부 및 전기 설비 확인이 필요합니다.
+            </p>
+          </div>
+
+          <!-- 용량 / 체크 -->
+          <div class="elec-grid">
+            <div class="elec-card">
+              <h3 class="elec-card__title">용량 추천</h3>
+              <ul class="elec-list">
+                <li>1인 샤워 : 30~50L</li>
+                <li>2인 동시 샤워 : 80L 이상</li>
+                <li>3인 동시 샤워 : 100L 이상 (가능하면 120L↑)</li>
+              </ul>
+            </div>
+
+            <div class="elec-card">
+              <h3 class="elec-card__title">현장 체크</h3>
+              <ul class="elec-list">
+                <li>급수 / 온수 배관 유무</li>
+                <li>설치 공간 및 배관 위치</li>
+                <li>200L 이상 : 전원 / 차단기 확인</li>
+                <li>제품 무게로 보조 인원 필요 가능</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="elec-foot">
+            <strong>요약</strong>
+            <span>~50L 기준 : 기본 144,000원 / 신규 199,000원</span>
+          </div>
+        </section>
+      </main>
+    </div>
+  </main>
+
+  <script>
+    // ✅ 안전 숫자 파싱 (예: "+30,000원" → 30000)
+    function toNumberSafe(v) {
+      if (v === null || v === undefined) return 0;
+      const cleaned = String(v).replace(/[^\d-]/g, "");
+      if (!cleaned || cleaned === "-") return 0;
+      const n = Number(cleaned);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function clamp0(n) {
+      return Math.max(0, toNumberSafe(n));
+    }
+
+    function fmtPlusWon(n) {
+      const v = clamp0(n);
+      return `+${v.toLocaleString()}원`;
+    }
+
+    const priceEl = document.getElementById("price");
+    const summaryListEl = document.getElementById("summaryList");
+    const prevBtn = document.getElementById("prevBtn");
+
+    // ✅ 최종 누적 추가금 표시
+    const totalPrice = clamp0(localStorage.getItem("install_price"));
+    priceEl.textContent = `+${totalPrice.toLocaleString()}원`;
+
+    // ✅ 저장값 읽기 (전기온수기 흐름)
+    const installType = localStorage.getItem("install_type"); // new / replace
+    const plumbing = localStorage.getItem("plumbing");        // yes / no
+    let conditions = [];
+    try { conditions = JSON.parse(localStorage.getItem("price_condition") || "[]"); } catch {}
+
+    // ✅ 선택 기록 (복사 텍스트에만 사용)
+    const HISTORY_KEY = "sundoo_selection_history";
+    let history = [];
+    try {
+      history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+      if (!Array.isArray(history)) history = [];
+    } catch {}
+
+    // ✅ 설치 타입 텍스트
+    const tInstall =
+      installType === "new" ? "신규" :
+      installType === "replace" ? "교체" :
+      "미선택";
+
+    // ✅ 설치 타입 추가금 (규칙: 신규 50,000 / 교체 0)
+    const installTypePrice =
+      installType === "new" ? 50000 :
+      installType === "replace" ? 0 :
+      0;
+
+    const tInstallWithPrice = `${tInstall} (${fmtPlusWon(installTypePrice)})`;
+
+    // ✅ 배관(급수/온수) 유무 텍스트
+    const tPlumbing =
+      plumbing === "yes" ? "있음" :
+      plumbing === "no" ? "없음 ( T자 부속 필요 )" :
+      "미선택";
+
+    // ✅ 조건 텍스트 (near=신규(+8,000), chimney=주름관(+30,000))
+    const condText = (() => {
+      const arr = [];
+      if (conditions.includes("near")) arr.push("신규(+8,000)");
+      if (conditions.includes("chimney")) arr.push("주름관(+30,000)");
+      return arr.length ? arr.join(", ") : "없음";
+    })();
+
+    // ✅ 요약 렌더
+    const summaryLines = [
+      `총 추가금: ${fmtPlusWon(totalPrice)}`,
+      `설치 타입: ${tInstallWithPrice}`,
+      `배관(급수/온수): ${tPlumbing}`,
+      `금액 조건: ${condText}`,
+    ];
+
+    summaryListEl.innerHTML =
+      summaryLines.map(line => `<li class="summary-item">• ${line}</li>`).join("");
+
+    // ✅ 복사용 텍스트
+    const copyText =
+`[상담 요약]
+- 제품: 전기온수기
+- 총 추가금: ${fmtPlusWon(totalPrice)}
+- 설치 타입: ${tInstallWithPrice}
+- 배관(급수/온수): ${tPlumbing}
+- 금액 조건: ${condText}
+
+[선택 기록]
+${history.slice().reverse().map(h => `- ${h.label}`).join("\n")}`.trim();
+
+    // ✅ 요약 복사
+    document.getElementById("copySummaryBtn").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(copyText);
+        alert("요약이 복사되었습니다.");
+      } catch {
+        const ta = document.createElement("textarea");
+        ta.value = copyText;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        alert("요약이 복사되었습니다.");
+      }
+    });
+
+    // ✅ 전체 초기화 (전기온수기 흐름)
+    document.getElementById("resetAllBtn").addEventListener("click", () => {
+      localStorage.removeItem("install_type");
+      localStorage.removeItem("install_price");
+      localStorage.removeItem("plumbing");
+      localStorage.removeItem("hole_yn");
+      localStorage.removeItem("price_condition");
+
+      localStorage.removeItem("install_price_before_condition");
+      localStorage.removeItem("install_price_before_hole");
+
+      localStorage.removeItem(HISTORY_KEY);
+
+      alert("전체 기록/선택이 초기화되었습니다.");
+      location.href = "mobile.html";
+    });
+
+    // ✅ 이전으로 버튼: 원하는 페이지로 이동
+    prevBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      location.href = "installation_elec3.html";
+    });
+  </script>
+</body>
+</html>

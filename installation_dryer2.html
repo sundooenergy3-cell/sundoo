@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>전화상담도우미 - 건조기</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="css/installation_boiler2.css" />
+
+  <script src="js/app.js" defer></script>
+</head>
+
+<body>
+  <main class="page">
+    <aside class="history" aria-label="선택 기록">
+      <div class="history-head">
+        <h2 class="history-title">선택 기록</h2>
+        <button type="button" class="history-clear">지우기</button>
+      </div>
+
+      <ul class="history-list"></ul>
+      <p class="history-hint">이전 단계 선택이 저장됩니다.</p>
+    </aside>
+
+    <div class="container">
+      <header class="logo-area">
+        <a href="mobile.html">
+          <img src="img/logo.png" alt="SUNDOO" class="logo" />
+        </a>
+      </header>
+
+      <main class="content">
+        <h1 class="title" id="price">+0원</h1>
+
+        <div class="subtitle-row">
+          <p class="subtitle">제품도 같이 구매하는지 확인해주세요.</p>
+          <button type="button" class="prev-btn" id="prevBtn">이전으로</button>
+        </div>
+
+        <div class="button-wrap">
+          <button type="button" class="type-btn" id="buyBtn" data-own="buy" data-price="100000">구매</button>
+          <button type="button" class="type-btn" id="haveBtn" data-own="have" data-price="180000">보유중</button>
+        </div>
+      </main>
+    </div>
+  </main>
+
+  <script>
+    const priceEl = document.getElementById("price");
+    const buyBtn = document.getElementById("buyBtn");
+    const haveBtn = document.getElementById("haveBtn");
+    const prevBtn = document.getElementById("prevBtn");
+
+    const PRICE_KEY = "install_price";
+    const HISTORY_KEY = "sundoo_selection_history";
+
+    const PRODUCT_EXTRA_KEY = "dryer_product_extra";
+    const HOLE_EXTRA_KEY = "dryer_hole_extra";
+    const CHIMNEY_EXTRA_KEY = "dryer_chimney_extra";
+
+    function toNum(v) {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function renderPrice(v) {
+      priceEl.textContent = `+${Math.max(0, v).toLocaleString()}원`;
+    }
+
+    function calcTotal() {
+      const product = toNum(localStorage.getItem(PRODUCT_EXTRA_KEY));
+      const hole = toNum(localStorage.getItem(HOLE_EXTRA_KEY));
+      const chimney = toNum(localStorage.getItem(CHIMNEY_EXTRA_KEY));
+      return Math.max(0, product + hole + chimney);
+    }
+
+    function setTotal(v) {
+      const n = Math.max(0, toNum(v));
+      localStorage.setItem(PRICE_KEY, String(n));
+      renderPrice(n);
+    }
+
+    function pushHistory(label, url) {
+      try {
+        const arr = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+        arr.push({ label, url, ts: Date.now() });
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(arr.slice(-30)));
+      } catch {}
+    }
+
+    /* ✅ 핵심: 이 페이지 들어오면
+       - 이 페이지에서 더해졌던(product_extra) 금액이 있으면 빼서 base로 복원
+       - 그리고 product 선택/extra를 초기화(=미선택 상태)
+    */
+    let base = 0;
+
+    (function init() {
+      const currentTotal = calcTotal();
+      const prevExtra = toNum(localStorage.getItem(PRODUCT_EXTRA_KEY)); // 이전에 선택했었다면 100000/180000
+
+      base = Math.max(0, currentTotal - prevExtra);
+
+      // 미선택 상태로 초기화
+      localStorage.removeItem("dryer_product");
+      localStorage.setItem(PRODUCT_EXTRA_KEY, "0");
+
+      buyBtn.classList.remove("active");
+      haveBtn.classList.remove("active");
+
+      // 화면/저장 금액은 base
+      setTotal(base);
+    })();
+
+    let locked = false;
+
+    function commitFromButton(btn) {
+      if (locked) return;
+      locked = true;
+
+      buyBtn.disabled = true;
+      haveBtn.disabled = true;
+
+      const own = btn.dataset.own;                 // buy / have
+      const extra = toNum(btn.dataset.price || 0); // 100000 / 180000
+
+      buyBtn.classList.toggle("active", own === "buy");
+      haveBtn.classList.toggle("active", own === "have");
+
+      localStorage.setItem("dryer_product", own);
+      localStorage.setItem(PRODUCT_EXTRA_KEY, String(extra));
+
+      const total = base + extra;
+      setTotal(total);
+
+      const nextUrl = "installation_dryer3.html";
+      pushHistory(
+        `건조기 제품: ${own === "buy" ? "구매(+100,000원)" : "보유중(+180,000원)"}`,
+        nextUrl
+      );
+
+      setTimeout(() => { location.href = nextUrl; }, 80);
+    }
+
+    // ✅ 모바일 중복 실행 방지: pointerup만 사용
+    buyBtn.addEventListener("pointerup", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      commitFromButton(e.currentTarget);
+    }, { passive: false });
+
+    haveBtn.addEventListener("pointerup", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      commitFromButton(e.currentTarget);
+    }, { passive: false });
+
+    prevBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      // 이 페이지 나가기 전에도 base로 유지(이미 base로 되어있음)
+      setTotal(base);
+      location.href = "installation_dryer.html";
+    });
+  </script>
+</body>
+</html>
