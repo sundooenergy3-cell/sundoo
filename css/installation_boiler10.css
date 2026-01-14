@@ -1,0 +1,465 @@
+/* =========================
+   Variables
+========================= */
+:root {
+  --blue: #006cff;
+  --text: #555555;
+  --line: #e8e8e8;
+  --muted: #888;
+}
+
+/* =========================
+   Reset
+========================= */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Pretendard", system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", sans-serif;
+  background: #fff;
+  color: #111;
+}
+
+/* =========================
+   Layout
+========================= */
+.page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 0 16px;
+}
+
+.container {
+  width: min(820px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 30px;
+}
+
+.content {
+  width: 100%;
+  text-align: center;
+}
+
+/* =========================
+   Logo
+========================= */
+.logo-area {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.logo {
+  height: 70px;
+  width: auto;
+  display: block;
+  object-fit: cover;
+}
+
+/* =========================
+   Header Price / Subtitle
+========================= */
+.price {
+  font-size: clamp(28px, 4vw, 60px);
+  font-weight: 700;
+  letter-spacing: 0.1rem;
+  margin-bottom: 18px;
+}
+
+.subtitle-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 2.5rem 0;
+}
+
+.subtitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* 이전 버튼 */
+.btn-prev {
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  color: #333;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-prev:hover {
+  background: rgba(0, 108, 255, 0.08);
+  border-color: var(--blue);
+}
+
+/* divider */
+.divider {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 22px auto;
+  width: min(720px, 100%);
+}
+
+/* =========================
+   Summary Slider
+========================= */
+.summary-slider {
+  width: min(720px, 100%);
+  margin: 10px auto 0;
+  overflow: hidden;
+  border-radius: 14px;
+}
+
+.summary-track {
+  display: flex;
+  width: 200%;
+  transform: translateX(0%);
+  transition: transform 0.35s ease;
+}
+
+.summary-page {
+  flex: 0 0 50%;
+  width: 50%;
+}
+
+/* Summary Box */
+.summary {
+  width: 100%;
+  height: 530px;
+  padding: 30px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fafafa;
+  text-align: left;
+  position: relative;
+}
+
+.summary-title {
+  font-size: 26px;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+
+.summary-title2 {
+  font-size: 15px;
+  color: #333;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.summary-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.summary-item {
+  font-size: 15px;
+  font-weight: 500;
+  color: #222;
+  line-height: 1.5;
+}
+
+.summary-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.summary-btn {
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 13px;
+  margin-top: 30px;
+}
+
+.summary-btn.primary {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #fff;
+}
+
+/* slider next */
+.summary-next {
+  position: absolute;
+  right: 20px;
+  bottom: 26px;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #fff;
+  cursor: pointer;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.summary-next:hover {
+  background: rgba(0, 108, 255, 0.08);
+}
+
+/* photo page */
+.summary-photo {
+  text-align: left;
+}
+
+.summary-image-wrap {
+  width: 650px;
+  margin: 0 auto;
+}
+
+.summary-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  object-fit: cover;
+}
+
+/* back */
+.summary-prev {
+  margin-top: 28px;
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.summary-prev:hover {
+  background: rgba(0, 108, 255, 0.08);
+}
+
+/* =========================
+   Guide
+========================= */
+.guide {
+  width: min(720px, 100%);
+  margin: 0 auto 5rem;
+  text-align: left;
+}
+
+.guide-title {
+  font-size: 35px;
+  font-weight: 800;
+  margin: 2.5rem 0 4rem;
+  text-align: center;
+  color: var(--blue);
+}
+
+/* 2열 카드형 가이드 */
+.guide-list.two-line {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px 24px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.guide-list.two-line > li {
+  background: #f8f9fb;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.guide-list.two-line strong {
+  display: block;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 6px;
+}
+
+.guide-list.two-line span {
+  color: #555;
+  font-weight: 500;
+}
+
+/* 마지막 강조 줄 */
+/* .guide-list.two-line li.highlight {
+  grid-column: span 2;
+  background: #eef4ff;
+  font-weight: 600;
+} */
+
+/* =========================
+   Extra Cost (추가 비용 가능)
+========================= */
+.extra-body {
+  display: block;
+}
+
+.extra-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.extra-list li {
+  line-height: 1.45;
+}
+
+.extra-list li.highlight {
+  font-weight: 700;
+  color: #222;
+}
+
+.extra-list li.highlight::before {
+  content: "• ";
+  color: #222;
+}
+
+.extra-list li.note {
+  font-size: 13px;
+  color: #666;
+  padding-left: 10px;
+  border-left: 3px solid #e6e6e6;
+}
+
+/* =========================
+   Foreign Boiler (타사 보일러)
+========================= */
+.guide-list.two-line li.foreign-boiler .foreign-body {
+  display: block;
+}
+
+.guide-list.two-line li.foreign-boiler .foreign-fee {
+  display: block;
+  padding: 8px 10px;
+  margin-top: 1rem;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid #ececec;
+  font-size: 13px;
+  color: #444;
+  line-height: 1.45;
+}
+
+/* =========================
+   History Panel
+========================= */
+.history {
+  width: 320px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  position: fixed;
+  left: 8%;
+  top: 25%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+}
+
+.history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.history-title {
+  font-size: 15px;
+  font-weight: 900;
+  color: #111;
+}
+
+.history-clear {
+  border: 0;
+  background: transparent;
+  color: var(--blue);
+  cursor: pointer;
+  font-weight: 800;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+
+.history-clear:hover {
+  background: rgba(0, 108, 255, 0.08);
+}
+
+.history-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 360px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.history-item {
+  font-size: 14px;
+  color: #222;
+  background: #f7f7f7;
+  border-radius: 10px;
+  padding: 10px;
+  line-height: 1.35;
+}
+
+.history-item time {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #777;
+}
+
+.history-hint {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* =========================
+   Responsive
+========================= */
+@media (max-width: 900px) {
+  .page {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .history {
+    position: static;
+    width: min(720px, 100%);
+    box-shadow: none;
+    margin-top: 18px;
+    left: auto;
+    top: auto;
+  }
+
+  .container {
+    padding-top: 28px;
+  }
+
+  .summary-image-wrap {
+    width: 100%;
+  }
+}

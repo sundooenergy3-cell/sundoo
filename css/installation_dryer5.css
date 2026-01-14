@@ -1,0 +1,69 @@
+li {
+    list-style: none;
+}
+.summary {
+  height: 490px;
+  margin-bottom: 2.5rem;
+}
+.dryer-info__title {
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.dryer-info__desc {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 14px;
+}
+
+.dryer-card {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid rgba(0,0,0,.08);
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.dryer-card__head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.dryer-card__title {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.dryer-badge {
+  font-size: 12px;
+  background: rgba(0,0,0,.05);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.dryer-list li {
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.muted {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.dryer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.dryer-foot {
+  margin-top: 12px;
+  padding: 10px;
+  background: #eff6ff;
+  border-radius: 10px;
+  font-size: 13px;
+  margin-bottom: 5rem;
+}

@@ -1,0 +1,83 @@
+/* 기본 초기화 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Pretendard", system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", sans-serif;
+    background-color: #ffffff;
+    color: #111;
+}
+
+/* 전체 래퍼 */
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 7rem;
+}
+
+/* 상단 로고 영역 */
+.logo-area {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.logo {
+  height: 70px; /* 필요하면 조절 */
+  width: auto;
+  display: block;
+  object-fit: cover;
+}
+
+.brand-name {
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 0.3px;
+}
+
+/* 메인 콘텐츠 */
+.content {
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.title {
+    margin: 0 0 18px;
+    font-size: clamp(28px, 4vw, 60px);
+    font-weight: 700;
+    letter-spacing: 0.1rem;
+}
+
+.status-text {
+    margin: 4rem 0 4rem;
+    font-size: 23px;
+    font-weight: 500;
+    letter-spacing: 0.1px;
+    color: #555555; /* #333333 */
+}
+
+.message {
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 1.6;
+}
+
+/* 하단 버튼 */
+.footer {
+    margin-top: 40px;
+}
+
+.retry-btn {
+    /* width: 64px; */
+    /* height: 64px; */
+    /* border-radius: 50%; */
+    border: none;
+    cursor: pointer;
+    background: #fff;
+}
